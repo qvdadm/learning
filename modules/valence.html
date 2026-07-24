@@ -1,1 +1,1301 @@
-<html><body style='font-family:Arial;background:#111;color:#fff'><a href='../index.html'>🏠 Home</a><h1>Valence</h1><p>Replace this wrapper with your uploaded application HTML.</p></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valence — Chemistry Visualized</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#090c14;
+    --panel:#121a2c;
+    --panel-2:#182238;
+    --border:#263252;
+    --border-soft:#1c2740;
+    --text:#eef1fa;
+    --muted:#8b98bb;
+    --muted-2:#5b6890;
+    --accent:#2dd4bf;
+    --accent-dim:#1a5f57;
+    --amber:#f5b942;
+
+    --am:#ff6b6b; --ae:#ffa94d; --tm:#4dabf7; --pt:#38d9a9; --mo:#9775fa;
+    --rn:#ffe066; --ha:#ff922b; --ng:#66d9e8; --la:#f783ac; --ac:#e64980; --unk:#6b7280;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(45,212,191,0.08), transparent 40%),
+      radial-gradient(circle at 85% 92%, rgba(245,185,66,0.06), transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--accent-dim); color:var(--text); }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+    padding:22px 32px; border-bottom:1px solid var(--border-soft);
+    background:linear-gradient(180deg, rgba(18,26,44,0.9), rgba(18,26,44,0.4));
+    position:sticky; top:0; z-index:50; backdrop-filter:blur(10px);
+  }
+  .brand-mark{
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:26px; letter-spacing:0.5px;
+    background:linear-gradient(120deg, var(--accent), #7ee8dc 60%, var(--amber));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .brand-tag{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--muted-2); letter-spacing:1.5px; text-transform:uppercase; }
+  .brand-sub{ font-size:13px; color:var(--muted); max-width:420px; line-height:1.4; display:none; }
+  @media(min-width:900px){ .brand-sub{ display:block; } }
+
+  .search-wrap{ position:relative; }
+  .search-wrap input{
+    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    font-family:'JetBrains Mono', monospace; font-size:13px; padding:9px 14px 9px 34px;
+    border-radius:8px; width:200px; outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  .search-wrap input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(45,212,191,0.12); }
+  .search-wrap svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:0.55; }
+
+  .app{ display:grid; grid-template-columns: minmax(0, 1.65fr) minmax(340px, 1fr); gap:22px; padding:26px 32px 60px; align-items:start; }
+  @media(max-width:1080px){ .app{ grid-template-columns:1fr; } }
+
+  .panel{ background:linear-gradient(180deg, var(--panel), var(--panel-2) 130%); border:1px solid var(--border-soft); border-radius:16px; padding:20px; }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:8px 16px; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border-soft); }
+  .legend-item{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono', monospace; }
+  .legend-dot{ width:10px; height:10px; border-radius:3px; flex:none; }
+
+  .table-scroll{ overflow-x:auto; padding-bottom:6px; }
+  .ptable{ display:grid; grid-template-columns:repeat(18, minmax(40px, 1fr)); gap:4px; min-width:900px; }
+  .cell{
+    aspect-ratio:1/1; border-radius:6px; border:1px solid rgba(255,255,255,0.06);
+    display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:4px 6px;
+    cursor:pointer; position:relative; transition:transform .12s ease, box-shadow .12s ease, filter .12s ease; overflow:hidden;
+  }
+  .cell:hover{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.4); filter:brightness(1.12); z-index:2; }
+  .cell.selected{ outline:2px solid #fff; outline-offset:-2px; box-shadow:0 0 0 4px rgba(255,255,255,0.12); z-index:3; }
+  .cell.dim{ opacity:0.18; filter:grayscale(0.6); }
+  .cell .z{ font-family:'JetBrains Mono', monospace; font-size:9px; opacity:0.75; color:#00000099; }
+  .cell .sym{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:16px; line-height:1; color:#0a0e18; margin-top:1px; }
+  .cell .nm{ font-size:7.5px; color:#0a0e18cc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; margin-top:1px; }
+  .cell.placeholder{ background:var(--panel-2) !important; border:1px dashed var(--border); color:var(--muted-2); align-items:center; justify-content:center; cursor:default; }
+  .cell.placeholder:hover{ transform:none; box-shadow:none; filter:none; }
+  .cell.placeholder .sym{ color:var(--muted-2); font-size:11px; }
+
+  .fblock{ margin-top:16px; }
+  .fblock-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--muted-2); margin-bottom:6px; letter-spacing:1px; }
+
+  .detail{ position:sticky; top:96px; min-height:520px; }
+  .detail-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:60px 20px; color:var(--muted); gap:10px; }
+  .detail-empty svg{ opacity:0.35; margin-bottom:6px; }
+  .detail-empty h3{ font-family:'Space Grotesk', sans-serif; color:var(--text); font-weight:600; margin:0; }
+  .detail-empty p{ font-size:13px; margin:0; max-width:260px; line-height:1.5; }
+
+  .d-head{ display:flex; gap:18px; align-items:center; margin-bottom:6px; }
+  .d-swatch{
+    width:72px; height:72px; border-radius:14px; flex:none; display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:30px; color:#0a0e18;
+    box-shadow:0 8px 24px -6px rgba(0,0,0,0.6);
+  }
+  .d-titles .d-name{ font-family:'Space Grotesk', sans-serif; font-size:22px; font-weight:700; margin:0; }
+  .d-titles .d-meta{ font-family:'JetBrains Mono', monospace; font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .d-cat-badge{ display:inline-block; margin-top:6px; padding:3px 9px; border-radius:20px; font-size:10.5px; font-family:'JetBrains Mono', monospace; letter-spacing:0.3px; border:1px solid currentColor; }
+  .d-summary{ font-size:13.5px; line-height:1.6; color:var(--muted); margin:16px 0 18px; padding-top:16px; border-top:1px solid var(--border-soft); }
+  .d-section-title{ font-family:'JetBrains Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted-2); margin:0 0 10px; }
+
+  .shell-wrap{ display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+  canvas#shellCanvas{ flex:none; }
+  .shell-legend{ font-size:12px; color:var(--muted); line-height:1.9; }
+  .shell-legend b{ color:var(--text); font-family:'JetBrains Mono', monospace; }
+
+  .props-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; margin-bottom:20px; }
+  .prop{ background:rgba(255,255,255,0.02); border:1px solid var(--border-soft); border-radius:10px; padding:9px 11px; }
+  .prop .k{ font-size:10px; color:var(--muted-2); text-transform:uppercase; letter-spacing:0.6px; font-family:'JetBrains Mono', monospace; }
+  .prop .v{ font-size:13.5px; margin-top:3px; font-weight:500; }
+
+  .nature-card{ display:flex; gap:14px; align-items:stretch; margin-bottom:20px; background:rgba(255,255,255,0.02); border:1px solid var(--border-soft); border-radius:12px; overflow:hidden; }
+  .nature-img-wrap{ width:120px; flex:none; background:var(--panel-2); display:flex; align-items:center; justify-content:center; position:relative; }
+  .nature-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .nature-img-fallback{ font-size:10px; color:var(--muted-2); text-align:center; padding:8px; font-family:'JetBrains Mono', monospace; line-height:1.4; }
+  .nature-text{ padding:12px 14px 12px 0; font-size:12.5px; color:var(--muted); line-height:1.55; display:flex; align-items:center; }
+
+  .isotope-line{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--text); line-height:1.9; margin-bottom:20px; background:rgba(255,255,255,0.02); border:1px solid var(--border-soft); border-radius:10px; padding:10px 13px; }
+
+  .spec-preview-wrap{ border-radius:10px; overflow:hidden; border:1px solid var(--border-soft); background:#0c0f16; margin-bottom:10px; }
+
+  .gauge-wrap{ margin-bottom:22px; }
+  .gauge-track{ position:relative; height:34px; border-radius:8px; overflow:visible; background:linear-gradient(90deg, #3b5bfd 0%, #2dd4bf 22%, #ffe066 55%, #ff922b 78%, #ff5c5c 100%); }
+  .gauge-marker{ position:absolute; top:-6px; width:2px; height:46px; background:#fff; }
+  .gauge-marker .lbl{ position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-family:'JetBrains Mono', monospace; font-size:9.5px; white-space:nowrap; color:var(--text); background:var(--panel); padding:1px 5px; border-radius:4px; border:1px solid var(--border); }
+  .gauge-marker .lbl.below{ top:auto; bottom:-20px; }
+  .gauge-scale{ display:flex; justify-content:space-between; font-family:'JetBrains Mono', monospace; font-size:9.5px; color:var(--muted-2); margin-top:26px; }
+  .gauge-phase{ margin-top:10px; font-size:12px; color:var(--muted); }
+  .gauge-phase b{ color:var(--text); }
+
+  .reaction-list{ display:flex; flex-direction:column; gap:10px; }
+  .reaction{ background:rgba(255,255,255,0.025); border:1px solid var(--border-soft); border-radius:10px; padding:11px 13px; cursor:pointer; transition:border-color .15s, transform .12s; position:relative; }
+  .reaction:hover{ border-color:var(--accent); transform:translateX(2px); }
+  .reaction:after{ content:'▶ simulate'; position:absolute; right:12px; bottom:11px; font-size:10px; font-family:'JetBrains Mono', monospace; color:var(--accent); opacity:0.85; }
+  .reaction .req{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--accent); margin-bottom:4px; }
+  .reaction .rname{ font-size:12.5px; color:var(--text); font-weight:600; margin-bottom:2px; padding-right:80px; }
+  .reaction .rcond{ font-size:11.5px; color:var(--amber); margin-bottom:4px; }
+  .reaction .rnote{ font-size:11.5px; color:var(--muted); line-height:1.45; }
+  .no-reaction{ font-size:12.5px; color:var(--muted); line-height:1.55; padding:10px 2px; }
+
+  footer{ text-align:center; padding:24px; font-size:11px; color:var(--muted-2); font-family:'JetBrains Mono', monospace; }
+
+  /* ---------- simulation modal ---------- */
+  .sim-overlay{ position:fixed; inset:0; background:rgba(4,6,12,0.82); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:200; padding:18px; overflow-y:auto; }
+  .sim-overlay.open{ display:flex; }
+  .sim-modal{
+    background:linear-gradient(180deg, var(--panel), var(--panel-2) 140%); border:1px solid var(--border);
+    border-radius:16px; padding:20px; width:100%; max-width:440px; box-shadow:0 30px 80px rgba(0,0,0,0.6); margin:auto;
+  }
+  .sim-modal-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .sim-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:16px; }
+  .sim-eq{ font-family:'JetBrains Mono', monospace; color:var(--accent); font-size:13px; margin-top:3px; }
+  .sim-close{ background:none; border:1px solid var(--border); color:var(--muted); border-radius:8px; width:28px; height:28px; cursor:pointer; font-size:14px; flex:none; }
+  .sim-close:hover{ color:var(--text); border-color:var(--muted); }
+  .sim-canvas-wrap{ border-radius:10px; overflow:hidden; border:1px solid var(--border-soft); margin:14px 0 8px; }
+  .sim-subtitle{ font-family:'JetBrains Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:1px; color:var(--muted-2); margin:14px 0 6px; }
+  .sim-mol-wrap{ border-radius:10px; overflow:hidden; border:1px solid var(--border-soft); background:#0c0f16; }
+  .sim-bond-legend{ display:flex; gap:14px; margin-top:6px; font-size:10.5px; color:var(--muted); font-family:'JetBrains Mono', monospace; }
+  .sim-bond-legend span{ display:flex; align-items:center; gap:5px; }
+  .sim-dot{ width:7px; height:7px; border-radius:50%; display:inline-block; }
+  .sim-emission{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:var(--muted); background:rgba(255,255,255,0.02); border:1px solid var(--border-soft); border-radius:8px; padding:8px 11px; }
+  .sim-emission .swatch{ width:14px; height:14px; border-radius:50%; flex:none; box-shadow:0 0 10px 2px currentColor; }
+  .sim-cond{ font-size:12px; color:var(--amber); margin-top:12px; }
+  .sim-note{ font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:4px; }
+
+  .sim-physics{ margin-top:16px; }
+  .unit-toggle{ display:flex; gap:6px; margin-bottom:8px; }
+  .unit-btn{
+    font-family:'JetBrains Mono', monospace; font-size:11px; padding:4px 12px; border-radius:20px;
+    border:1px solid var(--border); background:var(--panel-2); color:var(--muted); cursor:pointer; transition:all .15s;
+  }
+  .unit-btn:hover{ border-color:var(--accent); color:var(--text); }
+  .unit-btn.active{ background:rgba(45,212,191,0.15); border-color:var(--accent); color:var(--accent); }
+  .physics-formula{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--accent);
+    background:rgba(45,212,191,0.07); border:1px solid rgba(45,212,191,0.25); border-radius:8px;
+    padding:9px 12px; margin-bottom:8px; text-align:center; letter-spacing:0.3px;
+  }
+  .physics-calc{ display:flex; flex-direction:column; gap:3px; }
+  .physics-step{
+    font-family:'JetBrains Mono', monospace; font-size:11.5px; color:var(--muted);
+    background:rgba(255,255,255,0.02); border:1px solid var(--border-soft); border-radius:6px; padding:6px 10px;
+  }
+  .physics-step b{ color:var(--text); }
+  .physics-step.result{ color:var(--amber); border-color:rgba(245,185,66,0.3); background:rgba(245,185,66,0.06); }
+  .physics-empty{ font-size:12px; color:var(--muted-2); font-style:italic; }
+
+  @media (prefers-reduced-motion: reduce){ .cell{ transition:none; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div>
+      <div class="brand-mark">Valence</div>
+      <div class="brand-tag">Chemistry, visualized</div>
+    </div>
+  </div>
+  <div class="brand-sub">Click any element, then tap a reaction or its spectral fingerprint to see it in motion.</div>
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="searchInput" type="text" placeholder="Search element…" autocomplete="off">
+  </div>
+</header>
+
+<div class="app">
+  <div class="panel">
+    <div class="legend" id="legend"></div>
+    <div class="table-scroll">
+      <div class="ptable" id="ptable"></div>
+      <div class="fblock">
+        <div class="fblock-label">LANTHANIDES (57–71) &nbsp;/&nbsp; ACTINIDES (89–103)</div>
+        <div class="ptable" id="fblock" style="grid-template-rows:repeat(2, minmax(40px,1fr)); margin-bottom:0;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel detail" id="detailPanel">
+    <div class="detail-empty" id="detailEmpty">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <circle cx="12" cy="12" r="2.2"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4.2"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(60 12 12)"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(120 12 12)"/>
+      </svg>
+      <h3>Pick an element</h3>
+      <p>Select any tile on the periodic table to explore its color, phase, isotopes, and signature reactions.</p>
+    </div>
+    <div id="detailContent" style="display:none;"></div>
+  </div>
+</div>
+
+<footer>VALENCE · a standalone chemistry visualization app · natural-occurrence photos load live from Wikimedia when online</footer>
+
+<!-- ============ simulation modal (shared by reactions and spectral analysis) ============ -->
+<div class="sim-overlay" id="simOverlay">
+  <div class="sim-modal">
+    <div class="sim-modal-head">
+      <div>
+        <div class="sim-title" id="simTitle"></div>
+        <div class="sim-eq" id="simEq"></div>
+      </div>
+      <button class="sim-close" id="simClose">✕</button>
+    </div>
+
+    <div class="sim-canvas-wrap"><canvas id="simCanvas" width="400" height="180"></canvas></div>
+
+    <div class="sim-subtitle" id="simSubtitle">Molecular structure &amp; electrons</div>
+    <div class="sim-mol-wrap"><canvas id="molCanvas" width="400" height="120"></canvas></div>
+    <div class="sim-bond-legend" id="simBondLegend">
+      <span><i class="sim-dot" style="background:#eef1fa;"></i> shared / transferred electron</span>
+      <span id="bondTypeLabel"></span>
+    </div>
+
+    <div class="sim-emission" id="simEmission">
+      <div class="swatch" id="emissionSwatch"></div>
+      <div id="emissionText"></div>
+    </div>
+
+    <div class="sim-cond" id="simCond"></div>
+    <div class="sim-note" id="simNote"></div>
+
+    <div class="sim-physics" id="simPhysics" style="display:none;">
+      <div class="sim-subtitle">Physics: energy ↔ wavelength</div>
+      <div class="unit-toggle" id="unitToggle">
+        <button class="unit-btn active" data-unit="eV">eV</button>
+        <button class="unit-btn" data-unit="J">Joules</button>
+      </div>
+      <div class="physics-formula" id="physicsFormula"></div>
+      <div class="physics-calc" id="physicsCalc"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================= DATA ============================= */
+const CATS = {
+  AM:{label:'Alkali metal', color:'var(--am)'}, AE:{label:'Alkaline earth', color:'var(--ae)'},
+  TM:{label:'Transition metal', color:'var(--tm)'}, PT:{label:'Post-transition metal', color:'var(--pt)'},
+  MO:{label:'Metalloid', color:'var(--mo)'}, RN:{label:'Reactive nonmetal', color:'var(--rn)'},
+  HA:{label:'Halogen', color:'var(--ha)'}, NG:{label:'Noble gas', color:'var(--ng)'},
+  LA:{label:'Lanthanide', color:'var(--la)'}, AC:{label:'Actinide', color:'var(--ac)'}, UNK:{label:'Unknown / synthetic', color:'var(--unk)'}
+};
+
+// z, sym, name, mass, cat, phase, mp(K), bp(K), density, appearance, year, summary, occurrence, isotopes, spectrum("type:lines|note")
+const ELEMENTS = [
+[1,"H","Hydrogen",1.008,"RN","gas",14,20,"0.09 g/L","colorless, odorless gas",1766,"Lightest element in the universe; powers stars through fusion and is highly flammable.","Found in water and virtually all organic compounds; free H₂ gas is rare in the atmosphere.","¹H 99.98%, ²H (deuterium) 0.02%, ³H (tritium) trace — radioactive, t½=12.3y","lines:656,486,434,410|The Balmer series — visible hydrogen lines used to confirm hydrogen throughout the universe."],
+[2,"He","Helium",4.003,"NG","gas",null,4,"0.18 g/L","colorless, odorless gas",1868,"Second lightest element; chemically inert and used in balloons, blimps, and cryogenics.","Trapped in natural gas deposits underground; second most abundant element in the universe.","⁴He 99.9999%, ³He 0.0001%","lines:588,667,707,447,502|First discovered in the Sun's spectrum in 1868, years before being found on Earth."],
+[3,"Li","Lithium",6.94,"AM","solid",454,1615,"0.53 g/cm³","soft silvery metal",1817,"Lightest metal; the key ingredient in modern rechargeable batteries.","Found in mineral ores like spodumene and in brine deposits, never as a free metal.","⁷Li 92.4%, ⁶Li 7.6%","lines:671|A single brilliant crimson-red line makes lithium easy to spot in a flame test."],
+[4,"Be","Beryllium",9.012,"AE","solid",1560,2742,"1.85 g/cm³","steel-gray metal",1798,"Light, stiff, and toxic metal prized in aerospace and X-ray equipment.","Extracted mainly from the mineral beryl, which also forms emerald and aquamarine.","⁹Be 100% (only stable isotope)","none:|Beryllium's strongest lines sit in the ultraviolet, invisible to the naked eye."],
+[5,"B","Boron",10.81,"MO","solid",2349,4200,"2.34 g/cm³","black-brown metalloid",1808,"Hard metalloid used in heat-resistant glass, ceramics, and semiconductors.","Found in borax and other borate minerals left behind by evaporated ancient lakes.","¹¹B 80.1%, ¹⁰B 19.9%","none:|Boron's spectrum lies mostly in the ultraviolet, requiring specialized detectors."],
+[6,"C","Carbon",12.011,"RN","solid",3823,4098,"2.27 g/cm³","black (graphite) or clear (diamond)","Ancient","The backbone of organic chemistry — forms more compounds than any other element.","Found as graphite and diamond, in coal and petroleum, and in every living thing.","¹²C 98.9%, ¹³C 1.1%, ¹⁴C trace — radioactive, t½=5,730y","complex:|Carbon shows molecular bands rather than sharp lines — violet CN bands color candle and Bunsen flames."],
+[7,"N","Nitrogen",14.007,"RN","gas",63,77,"1.25 g/L","colorless, odorless gas",1772,"Makes up 78% of Earth's atmosphere; essential to amino acids and DNA.","Fills the atmosphere as N₂ gas; also locked into nitrate minerals in soil.","¹⁴N 99.6%, ¹⁵N 0.4%","lines:500,568,742|Nitrogen's visible lines are faint; its glow is more often seen in auroras."],
+[8,"O","Oxygen",15.999,"RN","gas",54,90,"1.43 g/L","colorless, odorless gas",1774,"Essential for respiration and combustion; the most abundant element in Earth's crust.","Makes up 21% of the atmosphere and about 46% of the crust, mostly bound in silicates and water.","¹⁶O 99.76%, ¹⁸O 0.20%, ¹⁷O 0.04%","lines:630,777|The 630nm auroral line paints the sky's green-red glow during oxygen's atmospheric emission."],
+[9,"F","Fluorine",18.998,"HA","gas",53,85,"1.70 g/L","pale yellow gas, pungent odor",1886,"The most reactive and electronegative element; found in Teflon and toothpaste.","Found in the minerals fluorite and fluorapatite; too reactive to exist free in nature.","¹⁹F 100% (only stable isotope)","none:|Fluorine's emission lines sit almost entirely in the ultraviolet and infrared."],
+[10,"Ne","Neon",20.180,"NG","gas",24,27,"0.90 g/L","colorless, odorless gas",1898,"Glows brilliant orange-red inside discharge tubes; the classic neon sign gas.","A trace component of the atmosphere, extracted by distilling liquid air.","²⁰Ne 90.5%, ²²Ne 9.2%, ²¹Ne 0.3%","lines:640,585,703|Neon's intense orange-red lines are exactly what light up neon signs."],
+[11,"Na","Sodium",22.990,"AM","solid",371,1156,"0.97 g/cm³","soft silvery metal",1807,"Reacts violently with water; an essential electrolyte for nerves and muscles.","Found in halite (rock salt) and dissolved abundantly throughout seawater.","²³Na 100% (only stable isotope)","lines:589|The iconic sodium doublet — the same yellow-orange glow once used in streetlights."],
+[12,"Mg","Magnesium",24.305,"AE","solid",923,1363,"1.74 g/cm³","shiny gray-white metal",1755,"Burns with a blinding white flame; sits at the center of every chlorophyll molecule.","Found dissolved in seawater and in the minerals dolomite and magnesite.","²⁴Mg 79.0%, ²⁶Mg 11.0%, ²⁵Mg 10.0%","lines:517,518,516|A tight green triplet, alongside a much stronger ultraviolet line."],
+[13,"Al","Aluminum",26.982,"PT","solid",933,2792,"2.70 g/cm³","silvery-white metal",1825,"Lightweight and corrosion-resistant; the most abundant metal in Earth's crust.","Extracted from bauxite ore; never found as a free metal in nature.","²⁷Al 100% (only stable isotope)","lines:396,394|Two close violet lines right at the edge of visible light."],
+[14,"Si","Silicon",28.085,"MO","solid",1687,3538,"2.33 g/cm³","gray, crystalline metalloid",1824,"The foundation of computer chips and glass; second most abundant element in the crust.","Found in sand and quartz as silicon dioxide, and in nearly all rocks as silicates.","²⁸Si 92.2%, ²⁹Si 4.7%, ³⁰Si 3.1%","none:|Silicon's strongest emission lines fall in the ultraviolet range."],
+[15,"P","Phosphorus",30.974,"RN","solid",317,554,"1.82 g/cm³","waxy white or red solid, garlic-like odor",1669,"White phosphorus glows faintly in the dark and can ignite spontaneously in air.","Found in phosphate rock (apatite) and in the DNA and bones of every living thing.","³¹P 100% (only stable isotope)","none:|Phosphorus emits mainly in the ultraviolet, though it glows via chemiluminescence, not atomic emission."],
+[16,"S","Sulfur",32.06,"RN","solid",388,718,"2.07 g/cm³","bright yellow crystalline solid","Ancient","Gives its compounds the classic rotten-egg smell; vital to many amino acids.","Found as native yellow crystals near volcanoes and hot springs, and in sulfide ores.","³²S 95.0%, ³⁴S 4.2%, ³³S 0.75%","lines:545,469|Weak blue-green lines, easily masked by sulfur's own blue combustion flame."],
+[17,"Cl","Chlorine",35.45,"HA","gas",172,239,"3.21 g/L","yellow-green gas, sharp choking odor",1774,"A powerful disinfectant used to purify water and manufacture PVC plastic.","Found combined with sodium in halite and dissolved as chloride ions in seawater.","³⁵Cl 75.8%, ³⁷Cl 24.2%","none:|Chlorine's emission lines are concentrated in the near-ultraviolet and violet."],
+[18,"Ar","Argon",39.948,"NG","gas",84,87,"1.78 g/L","colorless, odorless gas",1894,"Third most common gas in air; fills incandescent bulbs to stop the filament oxidizing.","The third most abundant atmospheric gas, formed by radioactive decay of potassium in rock.","⁴⁰Ar 99.6%, ³⁶Ar 0.34%, ³⁸Ar 0.06%","lines:811,763,696|The reddish-lilac glow seen inside plasma globes and gas-discharge tubes."],
+[19,"K","Potassium",39.098,"AM","solid",337,1032,"0.86 g/cm³","soft silvery metal",1807,"Reacts explosively with water with a lilac flame; critical for nerve signaling.","Found in feldspar and clay minerals, and dissolved in seawater; never as a free metal.","³⁹K 93.3%, ⁴¹K 6.7%, ⁴⁰K trace — radioactive, t½=1.25 billion y","lines:766,770,404|Two close red lines plus a violet line combine into potassium's lilac flame."],
+[20,"Ca","Calcium",40.078,"AE","solid",1115,1757,"1.55 g/cm³","dull gray metal",1808,"Builds bones and teeth; burns with a distinctive brick-red flame.","Found in limestone, chalk, and marble as calcium carbonate, and in bones and shells.","⁴⁰Ca 96.9%, ⁴⁴Ca 2.1%, ⁴²Ca 0.6%","lines:422,616,620|A violet line and a red-orange pair give calcium its brick-red flame."],
+[21,"Sc","Scandium",44.956,"TM","solid",1814,3109,"2.99 g/cm³","silvery-white metal",1879,"Light transition metal used in aerospace alloys and high-intensity stadium lamps.","Widely dispersed at low concentration in many minerals; rarely concentrated enough to mine.","⁴⁵Sc 100% (only stable isotope)","complex:|A dense forest of ultraviolet and violet lines used in high-intensity stadium lighting."],
+[22,"Ti","Titanium",47.867,"TM","solid",1941,3560,"4.51 g/cm³","lustrous silver metal",1791,"Strong, light, and corrosion-resistant; used in jet engines and hip implants.","Found in the minerals ilmenite and rutile; the ninth most abundant crustal element.","⁴⁸Ti 73.7%, ⁴⁶Ti 8.3%, ⁴⁷Ti 7.4%","complex:|Hundreds of catalogued lines across the visible range; used in stellar spectral classification."],
+[23,"V","Vanadium",50.942,"TM","solid",2183,3680,"6.11 g/cm³","blue-silver metal",1801,"Hardens steel; its compounds shift through vivid, changing colors.","Found in roughly 65 different minerals and in fossil fuel deposits like crude oil.","⁵¹V 99.8%, ⁵⁰V 0.25%","complex:|A rich line spectrum that shifts noticeably with the metal's oxidation state."],
+[24,"Cr","Chromium",51.996,"TM","solid",2180,2944,"7.15 g/cm³","shiny silver metal",1797,"Gives stainless steel its shine and rubies and emeralds their color.","Extracted primarily from the mineral chromite.","⁵²Cr 83.8%, ⁵³Cr 9.5%, ⁵⁰Cr 4.3%","lines:425,427,429|A tight cluster of violet-blue lines near 425 nanometers."],
+[25,"Mn","Manganese",54.938,"TM","solid",1519,2334,"7.44 g/cm³","silvery-gray metal",1774,"Essential trace element that hardens steel and powers alkaline batteries.","Found in the mineral pyrolusite and in nodules scattered across the ocean floor.","⁵⁵Mn 100% (only stable isotope)","lines:403|A prominent violet triplet clustered near 403 nanometers."],
+[26,"Fe","Iron",55.845,"TM","solid",1811,3134,"7.87 g/cm³","silvery-gray metal","Ancient","At Earth's core and in hemoglobin; the backbone of steel and civilization.","Found in hematite and magnetite ore, and molten at the very core of the Earth.","⁵⁶Fe 91.8%, ⁵⁴Fe 5.8%, ⁵⁷Fe 2.1%","complex:|One of the most line-rich spectra known — used to help map the Sun's own composition."],
+[27,"Co","Cobalt",58.933,"TM","solid",1768,3200,"8.90 g/cm³","silver-blue metal",1735,"Gives glass and ceramics their deep cobalt-blue color.","Found in cobaltite ore and as a byproduct of copper and nickel mining.","⁵⁹Co 100% (only stable isotope)","complex:|A dense, complex spectrum with lines scattered across the entire visible range."],
+[28,"Ni","Nickel",58.693,"TM","solid",1728,3186,"8.91 g/cm³","silvery-white metal",1751,"Corrosion-resistant metal used in coins and rechargeable batteries.","Found in laterite ore and iron-nickel meteorites; alloyed within Earth's core.","⁵⁸Ni 68.1%, ⁶⁰Ni 26.2%, ⁶²Ni 3.6%","complex:|Hundreds of faint lines, historically difficult for early spectroscopists to fully catalog."],
+[29,"Cu","Copper",63.546,"TM","solid",1358,2835,"8.96 g/cm³","reddish-orange metal","Ancient","An excellent conductor and one of the few naturally colored metals.","Found as a native metal and in ores like chalcopyrite and malachite.","⁶³Cu 69.2%, ⁶⁵Cu 30.8%","lines:510,515,521|A blue-green cluster gives copper its signature flame-test color."],
+[30,"Zn","Zinc",65.38,"TM","solid",693,1180,"7.14 g/cm³","bluish-white metal","Ancient","Protects steel from rusting through galvanization; an essential nutrient.","Extracted primarily from the mineral sphalerite (zinc blende).","⁶⁴Zn 49.2%, ⁶⁶Zn 27.7%, ⁶⁸Zn 18.5%","lines:468,472|Modest blue-green lines, often masked by zinc's own bluish-white flame."],
+[31,"Ga","Gallium",69.723,"PT","solid",303,2673,"5.91 g/cm³","silvery metal that melts in the hand",1875,"Melts just above room temperature; used in LEDs and semiconductors.","Found in trace amounts within bauxite and zinc ores; rarely concentrated.","⁶⁹Ga 60.1%, ⁷¹Ga 39.9%","lines:403,417|A pair of violet lines discovered spectroscopically before gallium metal was isolated."],
+[32,"Ge","Germanium",72.630,"MO","solid",1211,3106,"5.32 g/cm³","grayish-white metalloid",1886,"An early semiconductor material now used heavily in fiber optics.","Recovered from zinc-ore processing byproducts and certain coal ash.","⁷⁴Ge 36.7%, ⁷²Ge 27.5%, ⁷⁰Ge 20.4%","none:|Germanium's most useful diagnostic lines sit largely in the ultraviolet."],
+[33,"As","Arsenic",74.922,"MO","solid",1090,887,"5.78 g/cm³","gray metallic solid, garlic odor when heated","Ancient","A notorious poison historically, also used in semiconductor doping.","Found in the mineral arsenopyrite, often alongside copper, gold, and lead ores.","⁷⁵As 100% (only stable isotope)","complex:|A busy spectrum concentrated mostly in the near-ultraviolet."],
+[34,"Se","Selenium",78.971,"RN","solid",494,958,"4.81 g/cm³","gray or red solid, faint odor",1817,"Essential trace element that conducts electricity far better in bright light.","Recovered mainly as a byproduct of copper refining.","⁸⁰Se 49.6%, ⁷⁸Se 23.8%, ⁷⁶Se 9.4%","complex:|Numerous closely-packed lines spanning blue through red."],
+[35,"Br","Bromine",79.904,"HA","liquid",266,332,"3.10 g/cm³","reddish-brown liquid, sharp choking odor",1826,"One of only two elements that are liquid at room temperature.","Found dissolved as bromide salts in seawater and inland salt lakes.","⁷⁹Br 50.7%, ⁸¹Br 49.3%","complex:|A weak, complex visible spectrum overshadowed by much stronger ultraviolet lines."],
+[36,"Kr","Krypton",83.798,"NG","gas",116,120,"3.75 g/L","colorless, odorless gas",1898,"Used in energy-efficient lighting and high-speed photography flash lamps.","A trace atmospheric gas, extracted by distilling liquid air.","⁸⁴Kr 57.0%, ⁸⁶Kr 17.3%, ⁸²Kr 11.6%","lines:557,587|The 557nm green line once defined the meter itself, from 1960 to 1983."],
+[37,"Rb","Rubidium",85.468,"AM","solid",312,961,"1.53 g/cm³","soft silvery metal",1861,"Ignites spontaneously in air; used to build precision atomic clocks.","Found in the minerals lepidolite and pollucite, scattered through potassium ores.","⁸⁵Rb 72.2%, ⁸⁷Rb 27.8% (mildly radioactive, t½=49 billion y)","lines:780,795|A red-violet pair — rubidium was in fact discovered by these very spectral lines in 1861."],
+[38,"Sr","Strontium",87.62,"AE","solid",1050,1655,"2.64 g/cm³","silvery metal",1790,"Burns a vivid crimson-red; a favorite of fireworks and emergency flares.","Found in the minerals celestine and strontianite.","⁸⁸Sr 82.6%, ⁸⁶Sr 9.9%, ⁸⁷Sr 7.0%","lines:460,606,636,674|A blue line plus a red cluster combine into strontium's brilliant crimson flare color."],
+[39,"Y","Yttrium",88.906,"TM","solid",1799,3609,"4.47 g/cm³","silvery metal",1794,"Found in LEDs, camera lenses, and high-temperature superconductors.","Found in rare-earth minerals like xenotime, always alongside lanthanides.","⁸⁹Y 100% (only stable isotope)","complex:|A dense spectrum used to fingerprint yttrium-based phosphors and superconductors."],
+[40,"Zr","Zirconium",91.224,"TM","solid",2128,4650,"6.52 g/cm³","gray-white metal",1789,"Extremely corrosion-resistant; used to clad fuel rods in nuclear reactors.","Extracted from the mineral zircon, which also forms natural gemstones.","⁹⁰Zr 51.5%, ⁹⁴Zr 17.4%, ⁹²Zr 17.2%","complex:|Thousands of catalogued lines, historically used to help identify zirconium-bearing ores."],
+[41,"Nb","Niobium",92.906,"TM","solid",2750,5017,"8.57 g/cm³","gray metal",1801,"A superconducting metal essential to building MRI magnets.","Found in the mineral columbite, usually alongside tantalum.","⁹³Nb 100% (only stable isotope)","complex:|A dense, closely-spaced line spectrum typical of early transition metals."],
+[42,"Mo","Molybdenum",95.95,"TM","solid",2896,4912,"10.28 g/cm³","gray metal",1781,"High melting point metal used to strengthen and toughen steel alloys.","Extracted primarily from the mineral molybdenite.","⁹⁸Mo 24.1%, ⁹⁶Mo 16.7%, ⁹⁵Mo 15.9%","complex:|A rich spectrum used in some industrial arc-lamp emission analysis."],
+[43,"Tc","Technetium",98,"TM","solid",2430,4538,"11.0 g/cm³","silvery-gray metal (radioactive)",1937,"The first artificially produced element; widely used in medical imaging.","Not found naturally on Earth in meaningful quantity; produced in nuclear reactors.","⁹⁹Tc most common — radioactive, t½=211,000y","complex:|Rarely measured directly — technetium is usually identified by its radioactivity, not its light."],
+[44,"Ru","Ruthenium",101.07,"TM","solid",2607,4423,"12.45 g/cm³","silvery-white metal",1844,"A rare platinum-group metal used to harden other precious-metal alloys.","Found in platinum-group ore deposits alongside platinum and palladium.","¹⁰²Ru 31.6%, ¹⁰⁴Ru 18.6%, ¹⁰¹Ru 17.1%","complex:|A dense spectrum shared in character with the other platinum-group metals."],
+[45,"Rh","Rhodium",102.906,"TM","solid",2237,3968,"12.41 g/cm³","silvery-white metal",1803,"Highly reflective and inert; essential inside catalytic converters.","Found in trace amounts within platinum and nickel ores.","¹⁰³Rh 100% (only stable isotope)","complex:|Numerous lines concentrated mostly in the blue and violet range."],
+[46,"Pd","Palladium",106.42,"TM","solid",1828,3236,"12.02 g/cm³","silvery-white metal",1803,"Can absorb nearly 900 times its own volume of hydrogen gas.","Found in nickel-copper ore deposits alongside other platinum-group metals.","¹⁰⁶Pd 27.3%, ¹⁰⁸Pd 26.5%, ¹⁰⁵Pd 22.3%","complex:|A busy spectrum used to verify palladium purity in catalysis research."],
+[47,"Ag","Silver",107.868,"TM","solid",1235,2435,"10.49 g/cm³","lustrous white metal","Ancient","The best electrical and thermal conductor of any metal.","Found as a native metal and in ores like argentite, often alongside lead and copper.","¹⁰⁷Ag 51.8%, ¹⁰⁹Ag 48.2%","none:|Silver's strongest lines sit just outside the visible range, in the near-ultraviolet."],
+[48,"Cd","Cadmium",112.414,"TM","solid",594,1040,"8.65 g/cm³","bluish-white metal",1817,"A toxic heavy metal once common in rechargeable batteries and pigments.","Recovered almost entirely as a byproduct of zinc ore processing.","¹¹⁴Cd 28.7%, ¹¹²Cd 24.1%, ¹¹¹Cd 12.8%","lines:480,508,644|A blue, green, and red trio once used to define the international meter (1927–1960)."],
+[49,"In","Indium",114.818,"PT","solid",430,2345,"7.31 g/cm³","soft silvery metal that 'cries' when bent",1863,"Coats touchscreens worldwide as transparent indium tin oxide.","Recovered mainly as a byproduct of zinc ore refining.","¹¹⁵In 95.7% (mildly radioactive), ¹¹³In 4.3%","lines:451,410|Its brilliant indigo-blue line is literally where indium got its name."],
+[50,"Sn","Tin",118.710,"PT","solid",505,2875,"7.31 g/cm³","silvery-white metal","Ancient","Used since the Bronze Age; coats steel cans to prevent rust.","Extracted from the mineral cassiterite, mined for millennia.","¹²⁰Sn 32.6%, ¹¹⁸Sn 24.2%, ¹¹⁶Sn 14.5%","complex:|A moderately dense spectrum with lines scattered through blue and green."],
+[51,"Sb","Antimony",121.760,"MO","solid",904,1860,"6.68 g/cm³","silvery-gray metalloid","Ancient","Used in flame retardants and metal alloys since antiquity.","Found in the mineral stibnite, known and used since antiquity.","¹²¹Sb 57.2%, ¹²³Sb 42.8%","complex:|A busy blue-green spectrum typical of the pnictogen element family."],
+[52,"Te","Tellurium",127.60,"MO","solid",723,1261,"6.24 g/cm³","silvery-white metalloid",1782,"Gives skin and breath a persistent garlic odor even in tiny doses.","One of the rarest stable elements in Earth's crust, often found with gold ores.","¹³⁰Te 34.1%, ¹²⁸Te 31.7%, ¹²⁶Te 18.9%","complex:|A dense spectrum concentrated mostly in the blue-green range."],
+[53,"I","Iodine",126.904,"HA","solid",387,457,"4.93 g/cm³","dark violet-black crystals, sharp antiseptic odor",1811,"Sublimes directly into violet vapor; essential for making thyroid hormones.","Found concentrated in seaweed and brine deposits from ancient seas.","¹²⁷I 100% (only stable isotope)","complex:|Molecular iodine vapor absorbs visible light broadly, producing its striking violet color."],
+[54,"Xe","Xenon",131.293,"NG","gas",161,165,"5.90 g/L","colorless, odorless gas",1898,"Used in high-intensity lamps and as fuel for ion propulsion engines.","An extremely rare trace atmospheric gas, extracted by distilling liquid air.","¹³²Xe 26.9%, ¹²⁹Xe 26.4%, ¹³¹Xe 21.2%","lines:462,467|A blue-white discharge glow used in xenon car headlights and camera flash tubes."],
+[55,"Cs","Cesium",132.905,"AM","solid",302,944,"1.93 g/cm³","soft gold-colored metal",1860,"Melts near body temperature; defines the length of the second itself.","Found in the rare mineral pollucite.","¹³³Cs 100% (only stable isotope)","lines:455,459|A pair of vivid blue lines — cesium was in fact discovered by these lines in 1860."],
+[56,"Ba","Barium",137.327,"AE","solid",1000,2118,"3.51 g/cm³","silvery-white metal",1808,"Burns apple-green; swallowed as a contrast agent before some X-rays.","Found in the minerals barite and witherite.","¹³⁸Ba 71.7%, ¹³⁷Ba 11.2%, ¹³⁶Ba 7.9%","lines:553,614|A green line and an orange cluster combine into barium's apple-green flame."],
+[57,"La","Lanthanum",138.905,"LA","solid",1193,3737,"6.15 g/cm³","silvery-white metal",1839,"The most reactive rare earth; used in camera and telescope lenses.","Found in rare-earth ores like monazite and bastnäsite alongside other lanthanides.","¹³⁹La 99.9%, ¹³⁸La 0.1% (mildly radioactive)","complex:|A dense spectrum typical of the lanthanide series, used to help fingerprint rare-earth ores."],
+[58,"Ce","Cerium",140.116,"LA","solid",1068,3716,"6.77 g/cm³","silvery iron-gray metal",1803,"The most abundant rare earth; sparks when scratched, used in lighter flints.","Found in monazite and bastnäsite ores.","¹⁴⁰Ce 88.4%, ¹⁴²Ce 11.1%","complex:|Thousands of catalogued lines — one of the most complex atomic spectra ever measured."],
+[59,"Pr","Praseodymium",140.908,"LA","solid",1208,3403,"6.77 g/cm³","silvery metal",1885,"Colors glass and ceramics a rich yellow-green.","Found alongside other lanthanides in monazite and bastnäsite ores.","¹⁴¹Pr 100% (only stable isotope)","complex:|A rich spectrum with characteristic bands that also color welding-glass filters green."],
+[60,"Nd","Neodymium",144.242,"LA","solid",1297,3347,"7.01 g/cm³","silvery metal",1885,"Powers the strongest permanent magnets ever made.","Found in monazite and bastnäsite ores; extracted for magnet production.","¹⁴²Nd 27.2%, ¹⁴⁴Nd 23.8% (mildly radioactive), ¹⁴⁶Nd 17.2%","complex:|Sharp absorption bands are exploited directly inside neodymium laser crystals."],
+[61,"Pm","Promethium",145,"LA","solid",1315,3273,"7.26 g/cm³","silvery metal (radioactive)",1945,"The only radioactive lanthanide; once used in glow-in-the-dark paint.","Not found naturally in meaningful amounts; produced by nuclear fission.","¹⁴⁵Pm most stable — radioactive, t½=17.7y","none:|Extremely difficult to measure — intensely radioactive and vanishingly rare."],
+[62,"Sm","Samarium",150.36,"LA","solid",1345,2067,"7.52 g/cm³","silvery metal",1879,"Combined with cobalt to make powerful heat-resistant magnets.","Found in monazite and bastnäsite ores alongside other rare earths.","¹⁵²Sm 26.8%, ¹⁵⁴Sm 22.8%, ¹⁴⁷Sm 15.0% (mildly radioactive)","complex:|A dense spectrum with narrow, well-resolved lines useful in laser physics research."],
+[63,"Eu","Europium",151.964,"LA","solid",1099,1802,"5.24 g/cm³","silvery metal",1901,"Provides the red and blue glow of older television phosphors.","Found in monazite ore, typically the scarcest of the common lanthanides.","¹⁵³Eu 52.2%, ¹⁵¹Eu 47.8%","lines:612,590|Sharp red and orange emission lines make europium a key TV and LED phosphor activator."],
+[64,"Gd","Gadolinium",157.25,"LA","solid",1585,3546,"7.90 g/cm³","silvery-white metal",1880,"Highly magnetic; used as a contrast agent in MRI scans.","Found in monazite and gadolinite ores.","¹⁵⁸Gd 24.8%, ¹⁶⁰Gd 21.9%, ¹⁵⁶Gd 20.5%","complex:|A rich spectrum, though gadolinium is identified far more often by its magnetism than its light."],
+[65,"Tb","Terbium",158.925,"LA","solid",1629,3503,"8.23 g/cm³","silvery-gray metal",1843,"Emits a bright green light in low-energy fluorescent lamps.","Found in trace amounts within monazite and xenotime ores.","¹⁵⁹Tb 100% (only stable isotope)","lines:543|A strong, sharp green emission line powers energy-efficient fluorescent lamp phosphors."],
+[66,"Dy","Dysprosium",162.500,"LA","solid",1680,2840,"8.54 g/cm³","silvery metal",1886,"Stays highly magnetic even at high temperatures; used inside hard drives.","Found in monazite and xenotime ores.","¹⁶⁴Dy 28.3%, ¹⁶²Dy 25.5%, ¹⁶³Dy 24.9%","complex:|A dense spectrum with hundreds of lines spread across the visible range."],
+[67,"Ho","Holmium",164.930,"LA","solid",1734,2993,"8.79 g/cm³","silvery-white metal",1878,"Has the strongest magnetic moment of any naturally occurring element.","Found in trace amounts within monazite and gadolinite ores.","¹⁶⁵Ho 100% (only stable isotope)","complex:|Sharp, narrow lines make holmium oxide a standard for calibrating spectrophotometers."],
+[68,"Er","Erbium",167.259,"LA","solid",1802,3141,"9.07 g/cm³","silvery metal",1843,"Colors glass pink and amplifies signals inside fiber-optic cables.","Found in trace amounts within xenotime and gadolinite ores.","¹⁶⁶Er 33.5%, ¹⁶⁸Er 27.0%, ¹⁶⁷Er 22.9%","complex:|Infrared emission near 1550nm, invisible to the eye, makes erbium vital to fiber-optic amplifiers."],
+[69,"Tm","Thulium",168.934,"LA","solid",1818,2223,"9.32 g/cm³","silvery-gray metal",1879,"The rarest naturally occurring stable lanthanide, used in portable X-ray devices.","Found only in trace amounts within rare-earth ores.","¹⁶⁹Tm 100% (only stable isotope)","complex:|A moderately dense spectrum with a handful of useful blue emission lines."],
+[70,"Yb","Ytterbium",173.045,"LA","solid",1097,1469,"6.90 g/cm³","silvery metal",1878,"Used as a stress-gauge material and inside atomic clocks.","Found in trace amounts within monazite and xenotime ores.","¹⁷⁴Yb 31.8%, ¹⁷²Yb 21.8%, ¹⁷³Yb 16.1%","complex:|A relatively simple spectrum for a lanthanide, exploited in today's most precise atomic clocks."],
+[71,"Lu","Lutetium",174.967,"LA","solid",1925,3675,"9.84 g/cm³","silvery-white metal",1907,"The rarest and most expensive stable rare earth.","Found only in trace amounts within rare-earth ores.","¹⁷⁵Lu 97.4%, ¹⁷⁶Lu 2.6% (mildly radioactive)","complex:|A dense spectrum typical of the heaviest stable lanthanide."],
+[72,"Hf","Hafnium",178.49,"TM","solid",2506,4876,"13.31 g/cm³","steel-gray metal",1923,"Absorbs neutrons efficiently; used in nuclear reactor control rods.","Found alongside zirconium in the mineral zircon, difficult to separate from it.","¹⁸⁰Hf 35.1%, ¹⁷⁸Hf 27.3%, ¹⁷⁷Hf 18.6%","complex:|A busy spectrum that overlaps closely with zirconium's own lines, first separated by spectroscopy."],
+[73,"Ta","Tantalum",180.948,"TM","solid",3290,5731,"16.65 g/cm³","gray-blue metal",1802,"Extremely corrosion-resistant; used in surgical implants and capacitors.","Found in the mineral tantalite, mined for use in electronics capacitors.","¹⁸¹Ta 99.99% (only major stable isotope)","complex:|Numerous lines concentrated mostly in the blue-violet range."],
+[74,"W","Tungsten",183.84,"TM","solid",3695,5828,"19.25 g/cm³","gray-white metal",1783,"Has the highest melting point of any metal; once glowed inside light bulbs.","Found in the minerals wolframite and scheelite.","¹⁸⁴W 30.6%, ¹⁸⁶W 28.4%, ¹⁸²W 26.5%","complex:|An extremely dense line spectrum; tungsten filaments instead glow via blackbody radiation, not lines."],
+[75,"Re","Rhenium",186.207,"TM","solid",3459,5869,"21.02 g/cm³","silvery-gray metal",1925,"One of the densest and rarest stable elements on Earth.","One of the rarest elements in the crust, recovered from molybdenum ore processing.","¹⁸⁷Re 62.6% (mildly radioactive), ¹⁸⁵Re 37.4%","complex:|A rich spectrum — rhenium was in fact the last stable element discovered, via X-ray spectroscopy."],
+[76,"Os","Osmium",190.23,"TM","solid",3306,5285,"22.59 g/cm³","blue-gray metal",1803,"The densest naturally occurring element known.","Found alongside platinum in river sands and nickel ore deposits.","¹⁹²Os 41.0%, ¹⁹⁰Os 26.4%, ¹⁸⁹Os 16.2%","complex:|A dense spectrum spread evenly across the entire visible range."],
+[77,"Ir","Iridium",192.217,"TM","solid",2719,4403,"22.56 g/cm³","silvery-white metal",1803,"So corrosion-resistant it marks the dinosaur extinction boundary layer in rock.","Found in meteorites and platinum-group ore deposits.","¹⁹³Ir 62.7%, ¹⁹¹Ir 37.3%","complex:|Numerous closely-spaced lines typical of the platinum-group metals."],
+[78,"Pt","Platinum",195.084,"TM","solid",2041,4098,"21.45 g/cm³","silvery-white metal",1735,"Prized in jewelry and catalytic converters for its chemical inertness.","Found as a native metal in placer deposits and nickel-copper ores.","¹⁹⁵Pt 33.8%, ¹⁹⁴Pt 32.9%, ¹⁹⁶Pt 25.2%","complex:|A busy spectrum used to verify platinum purity in jewelry assay labs."],
+[79,"Au","Gold",196.967,"TM","solid",1337,3129,"19.30 g/cm³","yellow lustrous metal","Ancient","Never tarnishes; malleable enough to hammer into translucent sheets.","Found as native metal in quartz veins and alluvial placer deposits.","¹⁹⁷Au 100% (only stable isotope)","lines:583,627|A yellow-orange line pair, subtler and less iconic than gold's own metallic sheen."],
+[80,"Hg","Mercury",200.592,"TM","liquid",234,630,"13.53 g/cm³","silvery liquid metal","Ancient","The only metal liquid at room temperature; highly toxic.","Extracted mainly from the mineral cinnabar.","²⁰²Hg 29.7%, ²⁰⁰Hg 23.1%, ¹⁹⁹Hg 16.9%","lines:405,436,546,577|Sharp violet, blue, green and yellow lines define the light from fluorescent lamps."],
+[81,"Tl","Thallium",204.38,"PT","solid",577,1746,"11.85 g/cm³","silvery-white soft metal",1861,"Once used as an odorless, tasteless poison; extremely toxic today.","Found in trace amounts within potassium-rich minerals and smelting byproducts.","²⁰⁵Tl 70.5%, ²⁰³Tl 29.5%","lines:535|A brilliant green line — thallium's name literally means 'green twig' in Greek, from this line."],
+[82,"Pb","Lead",207.2,"PT","solid",601,2022,"11.34 g/cm³","bluish-white to gray metal","Ancient","A dense, soft, toxic metal once common in pipes, paint, and fuel.","Extracted primarily from the mineral galena.","²⁰⁸Pb 52.4%, ²⁰⁶Pb 24.1%, ²⁰⁷Pb 22.1%","complex:|A relatively weak, complex spectrum concentrated in the blue-violet range."],
+[83,"Bi","Bismuth",208.980,"PT","solid",545,1837,"9.78 g/cm³","pinkish metal with iridescent oxide",1753,"Grows striking rainbow staircase crystals when cooled slowly.","Found as a native metal and in the mineral bismuthinite.","²⁰⁹Bi 100%, extremely weakly radioactive (t½ far exceeds the age of the universe)","complex:|A dense spectrum used to verify bismuth purity in low-melting alloy production."],
+[84,"Po","Polonium",209,"PT","solid",527,1235,"9.20 g/cm³","silvery metal (radioactive)",1898,"Intensely radioactive; discovered by Marie and Pierre Curie.","Occurs only in trace amounts in uranium ores as a decay product.","²⁰⁹Po most stable — radioactive, t½=124y","none:|Rarely measured optically at all due to its extreme radioactivity."],
+[85,"At","Astatine",210,"HA","solid",575,610,"unknown (extremely rare)","likely a dark metallic solid",1940,"Rarest naturally occurring element — only a few atoms exist at once.","Occurs only fleetingly in uranium and thorium ore as a decay product.","²¹⁰At most stable — radioactive, t½=8.1h","none:|Too radioactive and short-lived for its spectrum to ever be directly recorded."],
+[86,"Rn","Radon",222,"NG","gas",202,211,"9.73 g/L","colorless gas (radioactive)",1900,"A radioactive gas that seeps from soil and is a leading cause of lung cancer.","Seeps continuously from uranium-bearing soil and rock as a decay product.","²²²Rn most common — radioactive, t½=3.8 days","complex:|A radioactive noble gas with several lines across the red and green range."],
+[87,"Fr","Francium",223,"AM","solid",300,950,"unknown (extremely rare)","presumed metallic",1939,"So unstable that only grams of it exist on Earth at any moment.","Forms only fleetingly in uranium and thorium ore as a decay product.","²²³Fr most stable — radioactive, t½=22 minutes","none:|So unstable that only a handful of atoms have ever been spectroscopically studied."],
+[88,"Ra","Radium",226,"AE","solid",973,2010,"5.50 g/cm³","silvery-white metal (radioactive)",1898,"Glows faintly blue; once painted on watch dials, with tragic consequences.","Occurs in trace amounts within uranium ores as a decay product.","²²⁶Ra most stable — radioactive, t½=1,600y","lines:468,482|A blue-green emission historically used to help confirm radium's discovery in 1898."],
+[89,"Ac","Actinium",227,"AC","solid",1500,3500,"10.07 g/cm³","silvery metal (radioactive)",1899,"Glows visibly blue in the dark due to its intense radioactivity.","Occurs in trace amounts within uranium ores as a decay product.","²²⁷Ac most stable — radioactive, t½=21.8y","none:|Intensely radioactive and scarce — its optical spectrum remains poorly characterized."],
+[90,"Th","Thorium",232.038,"AC","solid",2115,5061,"11.72 g/cm³","silvery metal",1829,"A promising nuclear fuel, more abundant in Earth's crust than uranium.","Found in the mineral monazite and in thorite ore.","²³²Th 100% (weakly radioactive, t½=14 billion y)","complex:|One of the densest known atomic spectra; once exploited in gas-lantern mantle glow."],
+[91,"Pa","Protactinium",231.036,"AC","solid",1841,4300,"15.37 g/cm³","silvery metal (radioactive)",1913,"Rare and highly radioactive; found in trace amounts within uranium ore.","Occurs only in trace amounts within uranium ore as a decay product.","²³¹Pa most stable — radioactive, t½=32,760y","none:|Extremely rare and radioactive; spectroscopic data on it remains limited."],
+[92,"U","Uranium",238.029,"AC","solid",1405,4404,"19.05 g/cm³","silvery-gray metal",1789,"Fuels nuclear reactors; the heaviest naturally occurring element.","Extracted from the minerals uraninite (pitchblende) and carnotite.","²³⁸U 99.3% (radioactive, t½=4.5 billion y), ²³⁵U 0.7%","complex:|A famously dense spectrum; uranium glass instead glows a vivid green under ultraviolet light."],
+[93,"Np","Neptunium",237,"AC","solid",917,4273,"20.45 g/cm³","silvery metal (radioactive)",1940,"The first transuranium element ever synthesized in a laboratory.","Not found naturally in meaningful amounts; produced in nuclear reactors.","²³⁷Np most stable — radioactive, t½=2.1 million y","none:|Synthetic and radioactive, with only limited spectroscopic characterization to date."],
+[94,"Pu","Plutonium",244,"AC","solid",913,3501,"19.82 g/cm³","silvery metal that tarnishes yellow",1940,"A key fuel in nuclear weapons and deep-space power generators.","Occurs only in trace amounts naturally; produced in bulk within nuclear reactors.","²⁴⁴Pu most stable — radioactive, t½=80 million y","complex:|A complex spectrum studied mainly for nuclear forensics rather than routine identification."],
+[95,"Am","Americium",243,"AC","solid",1449,2880,"12.0 g/cm³","silvery metal (radioactive)",1944,"Found inside most household smoke detectors.","Not found in nature; produced by neutron bombardment of plutonium.","²⁴³Am most stable — radioactive, t½=7,370y","none:|Identified mainly through its radioactive decay, rather than by optical emission."],
+[96,"Cm","Curium",247,"AC","solid",1613,3383,"13.51 g/cm³","silvery metal (radioactive)",1944,"Named for Marie and Pierre Curie; glows faintly in the dark.","Not found in nature; produced by bombarding plutonium with helium ions.","²⁴⁷Cm most stable — radioactive, t½=15.6 million y","none:|Extremely radioactive, which makes conventional optical spectroscopy difficult and rare."],
+[97,"Bk","Berkelium",247,"AC","solid",1259,null,"14.78 g/cm³","silvery metal (radioactive)",1949,"Produced atom by atom in nuclear reactors.","Not found in nature; produced atom by atom in nuclear reactors.","²⁴⁷Bk most stable — radioactive, t½=1,380y","none:|Produced in such tiny quantities that a full spectrum has never been recorded."],
+[98,"Cf","Californium",251,"AC","solid",1173,null,"15.1 g/cm³","silvery metal (radioactive)",1950,"A powerful neutron source used to help start up nuclear reactors.","Not found in nature; produced in specialized nuclear reactors.","²⁵¹Cf most stable — radioactive, t½=898y","none:|Its intense radioactivity makes conventional optical spectroscopy impractical."],
+[99,"Es","Einsteinium",252,"AC","solid",1133,null,"unknown","unknown (radioactive)",1952,"First identified in the debris of the first hydrogen bomb test.","Not found in nature; first identified in hydrogen bomb test debris.","²⁵²Es most stable — radioactive, t½=472 days","none:|Only ever produced in trace amounts far too small to analyze optically."],
+[100,"Fm","Fermium",257,"AC","solid",1800,null,"unknown","unknown (radioactive)",1952,"The heaviest element formable by simply bombarding lighter elements with neutrons.","Not found in nature; produced by intense neutron bombardment.","²⁵⁷Fm most stable — radioactive, t½=100.5 days","none:|Exists for mere days — never spectroscopically characterized in visible light."],
+[101,"Md","Mendelevium",258,"AC","solid",1100,null,"unknown","unknown (radioactive)",1955,"Only a handful of atoms have ever been produced.","Not found in nature; produced one atom at a time in accelerators.","²⁵⁸Md most stable — radioactive, t½=51.5 days","none:|Produced one atom at a time; no optical spectrum has ever been recorded."],
+[102,"No","Nobelium",259,"AC","solid",1100,null,"unknown","unknown (radioactive)",1958,"Extremely short-lived, existing for only minutes before decaying.","Not found in nature; produced in tiny quantities via particle accelerators.","²⁵⁹No most stable — radioactive, t½=58 minutes","none:|Too short-lived for any optical spectroscopy to ever be performed on it."],
+[103,"Lr","Lawrencium",266,"AC","solid",1900,null,"unknown","unknown (radioactive)",1961,"The final element of the actinide series.","Not found in nature; produced only in particle accelerators.","²⁶⁶Lr most stable known — radioactive, t½≈11 hours","none:|Never produced in quantities sufficient for any spectral analysis."],
+[104,"Rf","Rutherfordium",267,"TM","solid",null,null,"unknown","unknown (synthetic)",1964,"A superheavy synthetic element made only a few atoms at a time.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁶⁷Rf most stable known — radioactive, t½≈1.3 hours","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[105,"Db","Dubnium",268,"TM","solid",null,null,"unknown","unknown (synthetic)",1967,"Named after Dubna, Russia, where it was first synthesized.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁶⁸Db most stable known — radioactive, t½≈29 hours","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[106,"Sg","Seaborgium",269,"TM","solid",null,null,"unknown","unknown (synthetic)",1974,"Named after Nobel laureate Glenn Seaborg.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁶⁹Sg most stable known — radioactive, t½≈14 minutes","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[107,"Bh","Bohrium",270,"TM","solid",null,null,"unknown","unknown (synthetic)",1981,"Exists for only fractions of a second before radioactive decay.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁷⁰Bh most stable known — radioactive, t½≈1 minute","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[108,"Hs","Hassium",269,"TM","solid",null,null,"unknown","unknown (synthetic)",1984,"Predicted to be one of the densest elements physically possible.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁶⁹Hs most stable known — radioactive, t½≈16 seconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[109,"Mt","Meitnerium",278,"TM","solid",null,null,"unknown","unknown (synthetic)",1982,"Named after physicist Lise Meitner.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁷⁸Mt most stable known — radioactive, t½≈8 seconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[110,"Ds","Darmstadtium",281,"TM","solid",null,null,"unknown","unknown (synthetic)",1994,"Created by fusing nickel and lead nuclei together at high speed.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁸¹Ds most stable known — radioactive, t½≈12 seconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[111,"Rg","Roentgenium",282,"TM","solid",null,null,"unknown","unknown (synthetic)",1994,"Named after Wilhelm Röntgen, discoverer of X-rays.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁸²Rg most stable known — radioactive, t½≈2 minutes","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[112,"Cn","Copernicium",285,"TM","solid",null,null,"unknown","predicted volatile liquid or gas",1996,"May behave almost like a noble gas despite technically being a metal.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁸⁵Cn most stable known — radioactive, t½≈29 seconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[113,"Nh","Nihonium",286,"PT","solid",null,null,"unknown","unknown (synthetic)",2004,"The first element discovered in Asia, named for Japan (Nihon).","Not found in nature; synthesized by fusing atomic nuclei together.","²⁸⁶Nh most stable known — radioactive, t½≈10 seconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[114,"Fl","Flerovium",289,"PT","solid",null,null,"unknown","predicted volatile metal",1998,"Predicted to sit near a theoretical 'island of stability' of longer-lived isotopes.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁸⁹Fl most stable known — radioactive, t½≈2 seconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[115,"Mc","Moscovium",290,"PT","solid",null,null,"unknown","unknown (synthetic)",2003,"Exists for only a fraction of a second after creation.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁹⁰Mc most stable known — radioactive, t½≈0.65 seconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[116,"Lv","Livermorium",293,"PT","solid",null,null,"unknown","unknown (synthetic)",2000,"Named after Lawrence Livermore National Laboratory.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁹³Lv most stable known — radioactive, t½≈57 milliseconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[117,"Ts","Tennessine",294,"HA","solid",null,null,"unknown","unknown (synthetic)",2010,"The second-heaviest element ever created; a synthetic halogen.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁹⁴Ts most stable known — radioactive, t½≈51 milliseconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."],
+[118,"Og","Oganesson",294,"NG","solid",null,null,"unknown","unknown, may not act like a typical noble gas",2002,"The heaviest element ever synthesized; predicted to be a solid, not a gas.","Not found in nature; synthesized by fusing atomic nuclei together.","²⁹⁴Og most stable known — radioactive, t½≈0.7 milliseconds","none:|A synthetic superheavy element; it decays before any spectrum could be measured."]
+].map(e => {
+  const [specType, specRest] = e[14].split(':');
+  const [linesStr, note] = specRest.split('|');
+  const lines = linesStr ? linesStr.split(',').map(Number) : [];
+  return {z:e[0], sym:e[1], name:e[2], mass:e[3], cat:e[4], phase:e[5], mp:e[6], bp:e[7], density:e[8], appearance:e[9], year:e[10], summary:e[11], occurrence:e[12], isotopes:e[13], spectrum:{type:specType, lines, note}};
+});
+
+const BY_SYM = {};
+ELEMENTS.forEach(e=> BY_SYM[e.sym]=e);
+
+/* ---------- small molecule library (schematic 2D geometry, box ~60x40) ---------- */
+const MOLECULES = {
+  H2:  {label:"H₂",  atoms:[{sym:"H",x:14,y:20},{sym:"H",x:46,y:20}], bonds:[[0,1,1]]},
+  O2:  {label:"O₂",  atoms:[{sym:"O",x:14,y:20},{sym:"O",x:46,y:20}], bonds:[[0,1,2]]},
+  N2:  {label:"N₂",  atoms:[{sym:"N",x:14,y:20},{sym:"N",x:46,y:20}], bonds:[[0,1,3]]},
+  Cl2: {label:"Cl₂", atoms:[{sym:"Cl",x:14,y:20},{sym:"Cl",x:46,y:20}], bonds:[[0,1,1]]},
+  H2O: {label:"H₂O", atoms:[{sym:"O",x:30,y:12},{sym:"H",x:12,y:32},{sym:"H",x:48,y:32}], bonds:[[0,1,1],[0,2,1]]},
+  CO2: {label:"CO₂", atoms:[{sym:"O",x:8,y:20},{sym:"C",x:30,y:20},{sym:"O",x:52,y:20}], bonds:[[0,1,2],[1,2,2]]},
+  CH4: {label:"CH₄", atoms:[{sym:"C",x:30,y:20},{sym:"H",x:30,y:3},{sym:"H",x:10,y:30},{sym:"H",x:50,y:30},{sym:"H",x:30,y:37}], bonds:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]]},
+  SO2: {label:"SO₂", atoms:[{sym:"O",x:8,y:12},{sym:"S",x:30,y:26},{sym:"O",x:52,y:12}], bonds:[[0,1,2],[1,2,2]]},
+  NaCl:{label:"NaCl",atoms:[{sym:"Na",x:14,y:20},{sym:"Cl",x:46,y:20}], bonds:[[0,1,1]], ionic:true},
+  MgO: {label:"MgO", atoms:[{sym:"Mg",x:14,y:20},{sym:"O",x:46,y:20}], bonds:[[0,1,1]], ionic:true},
+  CaO: {label:"CaO", atoms:[{sym:"Ca",x:14,y:20},{sym:"O",x:46,y:20}], bonds:[[0,1,1]], ionic:true},
+  NaOH:{label:"NaOH",atoms:[{sym:"Na",x:8,y:20},{sym:"O",x:30,y:20},{sym:"H",x:52,y:20}], bonds:[[0,1,1],[1,2,1]], ionic:true},
+  KOH: {label:"KOH", atoms:[{sym:"K",x:8,y:20},{sym:"O",x:30,y:20},{sym:"H",x:52,y:20}], bonds:[[0,1,1],[1,2,1]], ionic:true},
+  HCl: {label:"HCl", atoms:[{sym:"H",x:14,y:20},{sym:"Cl",x:46,y:20}], bonds:[[0,1,1]]},
+  Na:  {label:"Na",  atoms:[{sym:"Na",x:30,y:20}], bonds:[]},
+  K:   {label:"K",   atoms:[{sym:"K",x:30,y:20}], bonds:[]},
+  Mg:  {label:"Mg",  atoms:[{sym:"Mg",x:30,y:20}], bonds:[]},
+  Fe:  {label:"Fe",  atoms:[{sym:"Fe",x:30,y:20}], bonds:[]},
+  Al:  {label:"Al",  atoms:[{sym:"Al",x:30,y:20}], bonds:[]},
+  C:   {label:"C",   atoms:[{sym:"C",x:30,y:20}], bonds:[]},
+  S:   {label:"S",   atoms:[{sym:"S",x:30,y:20}], bonds:[]},
+  Ca:  {label:"Ca",  atoms:[{sym:"Ca",x:30,y:20}], bonds:[]},
+  Fe2O3:{label:"Fe₂O₃", atoms:[{sym:"Fe",x:12,y:12},{sym:"Fe",x:12,y:32},{sym:"O",x:34,y:6},{sym:"O",x:34,y:22},{sym:"O",x:34,y:38}], bonds:[[0,2,1],[0,3,1],[1,3,1],[1,4,1]], ionic:true},
+  Al2O3:{label:"Al₂O₃", atoms:[{sym:"Al",x:12,y:12},{sym:"Al",x:12,y:32},{sym:"O",x:34,y:6},{sym:"O",x:34,y:22},{sym:"O",x:34,y:38}], bonds:[[0,2,1],[0,3,1],[1,3,1],[1,4,1]], ionic:true},
+  CaCO3:{label:"CaCO₃", atoms:[{sym:"Ca",x:6,y:20},{sym:"C",x:32,y:20},{sym:"O",x:32,y:3},{sym:"O",x:18,y:33},{sym:"O",x:50,y:33}], bonds:[[1,2,2],[1,3,1],[1,4,1]], ionic:true},
+  NH3: {label:"NH₃", atoms:[{sym:"N",x:30,y:10},{sym:"H",x:10,y:30},{sym:"H",x:30,y:37},{sym:"H",x:50,y:30}], bonds:[[0,1,1],[0,2,1],[0,3,1]]},
+};
+
+const REACTIONS = [
+ {name:"Hydrogen combustion", eq:"2H₂ + O₂ → 2H₂O", elements:["H","O"], condition:"Ignites around 500°C; flame reaches ~2000°C", note:"An explosive, highly exothermic reaction — the same one that powers rocket engines.", type:"combustion", color:"#7fd6ff", reactants:["H2","O2"], products:["H2O"], bondType:"covalent", emissionColor:"#bfe8ff", emissionLabel:"Nearly invisible pale-blue flame — energy released as O–H bonds form"},
+ {name:"Sodium + water", eq:"2Na + 2H₂O → 2NaOH + H₂", elements:["Na","H","O"], condition:"Reacts instantly at 25°C, often igniting the hydrogen released", note:"The classic, vigorous demonstration of alkali metal reactivity.", type:"fizz", intensity:"medium", color:"#ffdd66", reactants:["Na","H2O"], products:["NaOH","H2"], bondType:"ionic", emissionColor:"#ffcc33", emissionLabel:"589 nm sodium D-line — bright yellow-orange flame"},
+ {name:"Potassium + water", eq:"2K + 2H₂O → 2KOH + H₂", elements:["K","H","O"], condition:"Ignites spontaneously at room temperature with a lilac flame", note:"More violent than sodium's reaction due to potassium's greater reactivity.", type:"fizz", intensity:"high", color:"#d9a3ff", reactants:["K","H2O"], products:["KOH","H2"], bondType:"ionic", emissionColor:"#c99bff", emissionLabel:"Lilac / violet flame — potassium's characteristic emission line"},
+ {name:"Thermite reaction", eq:"Fe₂O₃ + 2Al → 2Fe + Al₂O₃", elements:["Fe","Al","O"], condition:"Ignition near 1500°C; the reaction itself reaches ~2500°C", note:"Used to weld railway tracks together; produces molten iron on the spot.", type:"thermite", reactants:["Fe2O3","Al"], products:["Fe","Al2O3"], bondType:"ionic", emissionColor:"#ffd27a", emissionLabel:"White-gold sparks — incandescent molten iron and aluminum oxide"},
+ {name:"Iron rusting", eq:"4Fe + 3O₂ + 6H₂O → 4Fe(OH)₃", elements:["Fe","O","H"], condition:"Occurs slowly at room temperature in the presence of moisture", note:"A gradual oxidation, not combustion — it releases heat far too slowly to feel.", type:"oxidize", reactants:["Fe","O2"], products:["Fe2O3"], bondType:"ionic", emissionColor:null, emissionLabel:"No visible light — energy is released far too slowly to glow"},
+ {name:"Magnesium combustion", eq:"2Mg + O₂ → 2MgO", elements:["Mg","O"], condition:"Ignites near 473°C; burns at roughly 3100°C", note:"Produces a blinding white light; the basis of flares and camera flashes.", type:"combustion", color:"#ffffff", reactants:["Mg","O2"], products:["MgO"], bondType:"ionic", emissionColor:"#ffffff", emissionLabel:"Intense white flame — used historically in photographic flash powder"},
+ {name:"Methane combustion", eq:"CH₄ + 2O₂ → CO₂ + 2H₂O", elements:["C","H","O"], condition:"Ignites around 580°C; flame temperature near 1950°C", note:"The everyday reaction that heats gas stoves and furnaces.", type:"combustion", color:"#66c7ff", reactants:["CH4","O2"], products:["CO2","H2O"], bondType:"covalent", emissionColor:"#66c7ff", emissionLabel:"Blue flame — complete, efficient combustion"},
+ {name:"Carbon combustion", eq:"C + O₂ → CO₂", elements:["C","O"], condition:"Charcoal ignites near 400°C and burns above 1000°C", note:"The basis of burning coal, charcoal, and wood.", type:"combustion", color:"#ff8a3d", reactants:["C","O2"], products:["CO2"], bondType:"covalent", emissionColor:"#ff8a3d", emissionLabel:"Orange-red glow — thermal (blackbody) incandescence, not a spectral line"},
+ {name:"Sulfur combustion", eq:"S + O₂ → SO₂", elements:["S","O"], condition:"Ignites near 250°C, burning with a pale blue flame", note:"Produces the choking gas largely responsible for acid rain.", type:"combustion", color:"#8fd6ff", reactants:["S","O2"], products:["SO2"], bondType:"covalent", emissionColor:"#8fd6ff", emissionLabel:"Pale blue flame from excited sulfur dioxide molecules"},
+ {name:"Sodium + chlorine", eq:"2Na + Cl₂ → 2NaCl", elements:["Na","Cl"], condition:"Reacts vigorously when gently heated above room temperature", note:"Forms ordinary table salt out of two famously dangerous elements.", type:"synthesis", colorA:"#ffdd66", colorB:"#c8ff8f", reactants:["Na","Cl2"], products:["NaCl"], bondType:"ionic", emissionColor:"#fff3b0", emissionLabel:"Bright yellow-white flash as an electron transfers from Na to Cl"},
+ {name:"Acid–base neutralization", eq:"HCl + NaOH → NaCl + H₂O", elements:["H","Cl","Na","O"], condition:"Instant at room temperature; mildly exothermic", note:"The foundation of titration and everyday acid-base chemistry.", type:"neutralize", reactants:["HCl","NaOH"], products:["NaCl","H2O"], bondType:"ionic", emissionColor:null, emissionLabel:"No light emitted — a mild, non-luminous exothermic reaction"},
+ {name:"Haber process", eq:"N₂ + 3H₂ ⇌ 2NH₃", elements:["N","H","Fe"], condition:"400–450°C, 150–200 atm, over an iron catalyst", note:"The industrial synthesis of ammonia — it feeds roughly half the world via fertilizer.", type:"synthesis", colorA:"#7fd6ff", colorB:"#c9d6ff", reactants:["N2","H2"], products:["NH3"], bondType:"covalent", emissionColor:null, emissionLabel:"No visible light — energy is released as heat under high pressure"},
+ {name:"Limestone decomposition", eq:"CaCO₃ → CaO + CO₂", elements:["Ca","C","O"], condition:"Requires roughly 840–900°C", note:"Produces the quicklime used in cement, releasing CO₂ in the process.", type:"decompose", reactants:["CaCO3"], products:["CaO","CO2"], bondType:"ionic", emissionColor:"#ff8a3d", emissionLabel:"Faint red-orange kiln glow from the intense heat required"},
+];
+
+/* ============================= POSITIONING ============================= */
+function gridPos(z){
+  if(z===1) return [1,1];
+  if(z===2) return [1,18];
+  const p2 = {3:1,4:2,5:13,6:14,7:15,8:16,9:17,10:18};
+  if(p2[z]) return [2, p2[z]];
+  const p3 = {11:1,12:2,13:13,14:14,15:15,16:16,17:17,18:18};
+  if(p3[z]) return [3, p3[z]];
+  if(z>=19&&z<=36) return [4, z-18];
+  if(z>=37&&z<=54) return [5, z-36];
+  if(z===55) return [6,1];
+  if(z===56) return [6,2];
+  if(z>=72&&z<=86) return [6, z-68];
+  if(z===87) return [7,1];
+  if(z===88) return [7,2];
+  if(z>=104&&z<=118) return [7, z-100];
+  if(z>=57&&z<=71) return [1, z-53];
+  if(z>=89&&z<=103) return [2, z-85];
+  return [0,0];
+}
+
+/* ============================= RENDER TABLE ============================= */
+const ptable = document.getElementById('ptable');
+const fblock = document.getElementById('fblock');
+const legend = document.getElementById('legend');
+
+Object.entries(CATS).forEach(([key,c])=>{
+  const item = document.createElement('div');
+  item.className='legend-item';
+  item.innerHTML = `<span class="legend-dot" style="background:${c.color}"></span>${c.label}`;
+  legend.appendChild(item);
+});
+
+function makeCell(el){
+  const div = document.createElement('div');
+  div.className='cell';
+  div.style.background = `var(--${el.cat.toLowerCase()})`;
+  div.style.gridRow = el._row;
+  div.style.gridColumn = el._col;
+  div.dataset.sym = el.sym;
+  div.innerHTML = `<span class="z">${el.z}</span><span class="sym">${el.sym}</span><span class="nm">${el.name}</span>`;
+  div.addEventListener('click', ()=>selectElement(el));
+  return div;
+}
+
+ELEMENTS.forEach(el=>{
+  const [r,c] = gridPos(el.z);
+  el._row = r; el._col = c;
+  if(el.z<=56 || (el.z>=72&&el.z<=88) || (el.z>=104&&el.z<=118)){
+    ptable.appendChild(makeCell(el));
+  } else {
+    fblock.appendChild(makeCell(el));
+  }
+});
+
+function makePlaceholder(row,label){
+  const div = document.createElement('div');
+  div.className='cell placeholder';
+  div.style.gridRow = row; div.style.gridColumn = 3;
+  div.innerHTML = `<span class="sym">${label}</span>`;
+  return div;
+}
+ptable.appendChild(makePlaceholder(6,"57–71"));
+ptable.appendChild(makePlaceholder(7,"89–103"));
+
+/* ============================= SELECTION & SEARCH ============================= */
+function selectElement(el){
+  document.querySelectorAll('.cell').forEach(c=>c.classList.toggle('selected', c.dataset.sym===el.sym));
+  renderDetail(el);
+}
+
+document.getElementById('searchInput').addEventListener('input', (e)=>{
+  const q = e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.cell:not(.placeholder)').forEach(c=>{
+    if(!q){ c.classList.remove('dim'); return; }
+    const el = ELEMENTS.find(x=>x.sym===c.dataset.sym);
+    const match = el.sym.toLowerCase().startsWith(q) || el.name.toLowerCase().includes(q) || String(el.z)===q;
+    c.classList.toggle('dim', !match);
+  });
+});
+
+/* ============================= DETAIL PANEL ============================= */
+const detailEmpty = document.getElementById('detailEmpty');
+const detailContent = document.getElementById('detailContent');
+
+function kToC(k){ return k===null || k===undefined ? null : Math.round((k-273.15)); }
+
+function renderGauge(el){
+  const mpC = kToC(el.mp);
+  const bpC = kToC(el.bp);
+  const MIN=-260, MAX=4200;
+  const pos = (c)=> Math.max(0, Math.min(100, ((c-MIN)/(MAX-MIN))*100 ));
+  let markers = '';
+  if(mpC!==null) markers += `<div class="gauge-marker" style="left:${pos(mpC)}%;"><span class="lbl">MP ${mpC}°C</span></div>`;
+  if(bpC!==null) markers += `<div class="gauge-marker" style="left:${pos(bpC)}%;"><span class="lbl below">BP ${bpC}°C</span></div>`;
+  markers += `<div class="gauge-marker" style="left:${pos(25)}%; background:#fff; opacity:0.5;"></div>`;
+
+  let phaseNote = (mpC===null && bpC===null)
+    ? `Melting and boiling points are not reliably known — this element is synthetic and exists for only fractions of a second.`
+    : `At room temperature (25°C), ${el.name} is a <b>${el.phase}</b>.`;
+
+  return `
+    <div class="gauge-wrap">
+      <div class="d-section-title">Temperature behavior</div>
+      <div class="gauge-track">${markers}</div>
+      <div class="gauge-scale"><span>${MIN}°C</span><span>0°C</span><span>1500°C</span><span>${MAX}°C</span></div>
+      <div class="gauge-phase">${phaseNote}</div>
+    </div>`;
+}
+
+function bohrShells(z){
+  const caps=[2,8,18,32,32,18,8];
+  let rem=z, shells=[];
+  for(const cap of caps){
+    if(rem<=0) break;
+    const e = Math.min(cap, rem);
+    shells.push(e);
+    rem -= e;
+  }
+  return shells;
+}
+
+function drawShells(el){
+  const canvas = document.getElementById('shellCanvas');
+  const ctx = canvas.getContext('2d');
+  const W=140,H=140,cx=W/2,cy=H/2;
+  canvas.width=W; canvas.height=H;
+  const shells = bohrShells(el.z);
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--'+el.cat.toLowerCase()).trim();
+
+  let start = null;
+  function frame(ts){
+    if(!start) start=ts;
+    const t = (ts-start)/1000;
+    ctx.clearRect(0,0,W,H);
+    ctx.beginPath();
+    ctx.arc(cx,cy,7,0,Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color; ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    shells.forEach((count, i)=>{
+      const r = 16 + i*13;
+      ctx.beginPath();
+      ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.lineWidth=1;
+      ctx.stroke();
+      const speed = 0.6 - i*0.07;
+      for(let k=0;k<count;k++){
+        const ang = (k/count)*Math.PI*2 + t*speed*(i%2===0?1:-1);
+        const ex = cx + r*Math.cos(ang);
+        const ey = cy + r*Math.sin(ang);
+        ctx.beginPath();
+        ctx.arc(ex,ey,2.4,0,Math.PI*2);
+        ctx.fillStyle = '#eef1fa';
+        ctx.shadowColor = color; ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    });
+    canvas._raf = requestAnimationFrame(frame);
+  }
+  if(canvas._raf) cancelAnimationFrame(canvas._raf);
+  canvas._raf = requestAnimationFrame(frame);
+  return shells;
+}
+
+function loadNatureImage(el){
+  const wrap = document.getElementById('natureImgWrap');
+  if(!wrap) return;
+  wrap.innerHTML = `<div class="nature-img-fallback">Loading preview…</div>`;
+  fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(el.name)}`)
+    .then(r=> r.ok ? r.json() : Promise.reject())
+    .then(data=>{
+      const src = (data.thumbnail && data.thumbnail.source) || (data.originalimage && data.originalimage.source);
+      if(src){
+        wrap.innerHTML = `<img src="${src}" alt="${el.name}" loading="lazy">`;
+      } else {
+        wrap.innerHTML = `<div class="nature-img-fallback">No photo available for ${el.name}</div>`;
+      }
+    })
+    .catch(()=>{
+      wrap.innerHTML = `<div class="nature-img-fallback">Preview needs an internet connection</div>`;
+    });
+}
+
+/* ============================= PHYSICS: WAVELENGTH ↔ ENERGY ============================= */
+const PHYS = {
+  h: 6.62607015e-34,   // Planck constant, J·s
+  c: 2.99792458e8,     // speed of light, m/s
+  eV: 1.602176634e-19, // 1 electronvolt in joules
+  R_H: 1.097373e7       // Rydberg constant, m^-1
+};
+
+function computeLinePhysics(wl_nm){
+  const wl_m = wl_nm * 1e-9;
+  const freq = PHYS.c / wl_m;
+  const E_J = PHYS.h * freq;
+  const E_eV = E_J / PHYS.eV;
+  return { wl_nm, wl_m, freq, E_J, E_eV };
+}
+
+function fmtExp(n, digits){
+  return n.toExponential(digits===undefined?3:digits).replace('e+','×10^').replace('e-','×10^-').replace('×10^-','×10⁻').replace(/\^(\d+)/, (m,d)=>'^'+d);
+}
+// render an exponent string like 3.03×10⁻¹⁹ using unicode superscripts
+const SUP = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+function toSup(str){ return String(str).split('').map(c=>SUP[c]!==undefined?SUP[c]:c).join(''); }
+function sci(n, digits){
+  const exp = n.toExponential(digits===undefined?3:digits);
+  const [mantissa, e] = exp.split('e');
+  const expNum = parseInt(e,10);
+  return `${mantissa}×10${toSup(expNum)}`;
+}
+
+// Balmer-series lookup for hydrogen's visible lines: wavelength(nm) -> [n_initial, n_final]
+const HYDROGEN_BALMER = {656:[3,2], 486:[4,2], 434:[5,2], 410:[6,2]};
+
+/* ============================= WAVELENGTH → COLOR ============================= */
+function wavelengthToRGB(wl){
+  let r=0,g=0,b=0;
+  if(wl>=380 && wl<440){ r=-(wl-440)/(440-380); g=0; b=1; }
+  else if(wl>=440 && wl<490){ r=0; g=(wl-440)/(490-440); b=1; }
+  else if(wl>=490 && wl<510){ r=0; g=1; b=-(wl-510)/(510-490); }
+  else if(wl>=510 && wl<580){ r=(wl-510)/(580-510); g=1; b=0; }
+  else if(wl>=580 && wl<645){ r=1; g=-(wl-645)/(645-580); b=0; }
+  else if(wl>=645 && wl<=780){ r=1; g=0; b=0; }
+  let factor;
+  if(wl>=380 && wl<420) factor=0.3+0.7*(wl-380)/(420-380);
+  else if(wl>=420 && wl<701) factor=1.0;
+  else if(wl>=701 && wl<=780) factor=0.3+0.7*(780-wl)/(780-701);
+  else factor=0.3;
+  const gamma=0.8;
+  const R = Math.round(255*Math.pow(Math.max(0,r*factor),gamma));
+  const G = Math.round(255*Math.pow(Math.max(0,g*factor),gamma));
+  const B = Math.round(255*Math.pow(Math.max(0,b*factor),gamma));
+  return `rgb(${R},${G},${B})`;
+}
+
+function seededRand(seed){
+  let s = seed % 2147483647; if(s<=0) s += 2147483646;
+  return function(){ s = (s*16807) % 2147483647; return (s-1)/2147483646; };
+}
+function generateComplexLines(z, count){
+  const rnd = seededRand(z*37+11);
+  const lines = [];
+  for(let i=0;i<count;i++) lines.push(Math.round(400 + rnd()*320));
+  return lines.sort((a,b)=>a-b);
+}
+
+function drawSpectrumBand(ctx,x,y,w,h,el,t,labeled,showEnergy){
+  const spec = el.spectrum;
+  const grad = ctx.createLinearGradient(x,0,x+w,0);
+  for(let i=0;i<=12;i++){
+    const wl = 380 + (i/12)*(750-380);
+    grad.addColorStop(i/12, wavelengthToRGB(wl));
+  }
+  ctx.fillStyle = grad;
+  ctx.globalAlpha = 0.22;
+  ctx.fillRect(x,y,w,h);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle='rgba(255,255,255,0.15)';
+  ctx.strokeRect(x,y,w,h);
+
+  let lines = [];
+  if(spec.type==='lines') lines = spec.lines;
+  else if(spec.type==='complex') lines = generateComplexLines(el.z, 7);
+
+  lines.forEach((wl,i)=>{
+    const clamped = Math.max(380,Math.min(750,wl));
+    const px = x + ((clamped-380)/(750-380))*w;
+    const color = wavelengthToRGB(clamped);
+    const pulse = t!==undefined ? 0.7+0.3*Math.sin(t*3+i) : 1;
+    ctx.beginPath();
+    ctx.moveTo(px,y);
+    ctx.lineTo(px,y+h);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = spec.type==='complex' ? 1.3 : 2.2;
+    ctx.globalAlpha = pulse;
+    ctx.shadowColor = color; ctx.shadowBlur = 7;
+    ctx.stroke();
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    if(labeled && spec.type!=='complex'){
+      ctx.fillStyle = '#8b98bb';
+      ctx.font = "8px 'JetBrains Mono', monospace";
+      ctx.textAlign='center';
+      const rowOffset = (i%2)*20;
+      ctx.fillText((wl>750?'~'+wl:wl)+'nm', px, y+h+11+rowOffset);
+      if(showEnergy){
+        const phys = computeLinePhysics(wl);
+        ctx.fillStyle = '#f5b942';
+        ctx.fillText(currentEnergyUnit==='eV' ? phys.E_eV.toFixed(2)+' eV' : sci(phys.E_J,2)+' J', px, y+h+21+rowOffset);
+      }
+    }
+  });
+
+  if(lines.length===0){
+    ctx.fillStyle='#5b6890';
+    ctx.font="9px 'JetBrains Mono', monospace";
+    ctx.textAlign='center';
+    ctx.fillText('no visible lines recorded', x+w/2, y+h/2+3);
+  }
+  return lines;
+}
+
+function renderSpecPreview(el){
+  const canvas = document.getElementById('specPreviewCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#0c0f16'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawSpectrumBand(ctx, 10, 8, canvas.width-20, 22, el, undefined, false);
+}
+
+function renderDetail(el){
+  detailEmpty.style.display='none';
+  detailContent.style.display='block';
+  const catInfo = CATS[el.cat];
+  const color = `var(--${el.cat.toLowerCase()})`;
+
+  const matched = REACTIONS.filter(r=>r.elements.includes(el.sym));
+  const reactionsHtml = matched.length
+    ? matched.map((r)=>`
+        <div class="reaction" data-rindex="${REACTIONS.indexOf(r)}">
+          <div class="rname">${r.name}</div>
+          <div class="req">${r.eq}</div>
+          <div class="rcond">${r.condition}</div>
+          <div class="rnote">${r.note}</div>
+        </div>`).join('')
+    : `<div class="no-reaction">No headline reactions logged for ${el.name} yet — the featured set focuses on reactive metals, halogens, and common combustion chemistry.</div>`;
+
+  detailContent.innerHTML = `
+    <div class="d-head">
+      <div class="d-swatch" style="background:${color};">${el.sym}</div>
+      <div class="d-titles">
+        <p class="d-name">${el.name}</p>
+        <div class="d-meta">Z=${el.z} · ${el.mass} u</div>
+        <span class="d-cat-badge" style="color:${color};">${catInfo.label}</span>
+      </div>
+    </div>
+    <div class="d-summary">${el.summary}</div>
+
+    <div class="shell-wrap">
+      <canvas id="shellCanvas" width="140" height="140"></canvas>
+      <div class="shell-legend" id="shellLegend"></div>
+    </div>
+
+    <div class="d-section-title">Physical properties</div>
+    <div class="props-grid">
+      <div class="prop"><div class="k">Atomic number</div><div class="v">${el.z}</div></div>
+      <div class="prop"><div class="k">Atomic mass</div><div class="v">${el.mass} u</div></div>
+      <div class="prop"><div class="k">Appearance</div><div class="v">${el.appearance}</div></div>
+      <div class="prop"><div class="k">Density</div><div class="v">${el.density}</div></div>
+      <div class="prop"><div class="k">Melting point</div><div class="v">${el.mp!==null? kToC(el.mp)+'°C' : 'Unknown'}</div></div>
+      <div class="prop"><div class="k">Boiling point</div><div class="v">${el.bp!==null? kToC(el.bp)+'°C' : 'Unknown'}</div></div>
+      <div class="prop"><div class="k">Discovered</div><div class="v">${el.year}</div></div>
+      <div class="prop"><div class="k">Room-temp phase</div><div class="v" style="text-transform:capitalize;">${el.phase}</div></div>
+    </div>
+
+    <div class="d-section-title">Found in nature</div>
+    <div class="nature-card">
+      <div class="nature-img-wrap" id="natureImgWrap"><div class="nature-img-fallback">Loading preview…</div></div>
+      <div class="nature-text">${el.occurrence}</div>
+    </div>
+
+    <div class="d-section-title">Isotopes</div>
+    <div class="isotope-line">${el.isotopes}</div>
+
+    <div class="d-section-title">Spectral fingerprint</div>
+    <div class="spec-preview-wrap"><canvas id="specPreviewCanvas" width="300" height="46"></canvas></div>
+    <div class="reaction" id="specSimCard" style="margin-bottom:20px;">
+      <div class="rname">Spectral analysis simulation</div>
+      <div class="rnote">${el.spectrum.note}</div>
+    </div>
+
+    ${renderGauge(el)}
+
+    <div class="d-section-title" style="margin-top:22px;">Common reactions <span style="color:var(--muted-2); text-transform:none; letter-spacing:0;">(tap to simulate)</span></div>
+    <div class="reaction-list">${reactionsHtml}</div>
+  `;
+
+  const shells = drawShells(el);
+  document.getElementById('shellLegend').innerHTML =
+    `<div><b>${el.z}</b> electrons</div><div>${shells.length} shell${shells.length!==1?'s':''}</div><div>${shells.join(' · ')}</div>`;
+
+  loadNatureImage(el);
+  renderSpecPreview(el);
+
+  detailContent.querySelectorAll('.reaction[data-rindex]').forEach(card=>{
+    card.addEventListener('click', ()=> openSimulation(REACTIONS[parseInt(card.dataset.rindex)]));
+  });
+  document.getElementById('specSimCard').addEventListener('click', ()=> openSpectrumSim(el));
+}
+
+/* ============================= MOLECULE / ELECTRON RENDERING (reactions) ============================= */
+function catColor(sym){
+  const el = BY_SYM[sym];
+  if(!el) return '#8b98bb';
+  return getComputedStyle(document.documentElement).getPropertyValue('--'+el.cat.toLowerCase()).trim();
+}
+
+function drawMolecule(ctx, originX, originY, scale, mol, t){
+  mol.bonds.forEach(([i,j,order])=>{
+    const a = mol.atoms[i], b = mol.atoms[j];
+    const ax=originX+a.x*scale, ay=originY+a.y*scale;
+    const bx=originX+b.x*scale, by=originY+b.y*scale;
+    const dx=bx-ax, dy=by-ay;
+    const len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len, ny=dx/len;
+    const gap = 2.2;
+    for(let o=0;o<order;o++){
+      const off = (o-(order-1)/2)*gap;
+      ctx.beginPath();
+      ctx.moveTo(ax+nx*off, ay+ny*off);
+      ctx.lineTo(bx+nx*off, by+ny*off);
+      ctx.strokeStyle = mol.ionic ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = 1.6;
+      if(mol.ionic) ctx.setLineDash([2,3]); else ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    const mx=(ax+bx)/2, my=(ay+by)/2;
+    if(mol.ionic){
+      const cycle = (t*0.6)%1;
+      const ex = ax + (bx-ax)*cycle;
+      const ey = ay + (by-ay)*cycle - Math.sin(cycle*Math.PI)*6;
+      ctx.beginPath(); ctx.arc(ex,ey,2.3,0,Math.PI*2);
+      ctx.fillStyle='#fff'; ctx.shadowColor='#fff'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+    } else {
+      for(let k=0;k<2;k++){
+        const ang = t*3 + k*Math.PI + Math.atan2(dy,dx);
+        const ex = mx + Math.cos(ang)*4;
+        const ey = my + Math.sin(ang)*4;
+        ctx.beginPath(); ctx.arc(ex,ey,1.8,0,Math.PI*2);
+        ctx.fillStyle='#eef1fa'; ctx.shadowColor='#8fd6ff'; ctx.shadowBlur=6; ctx.fill(); ctx.shadowBlur=0;
+      }
+    }
+  });
+
+  mol.atoms.forEach((a,idx)=>{
+    const ax=originX+a.x*scale, ay=originY+a.y*scale;
+    const c = catColor(a.sym);
+    const elMeta = BY_SYM[a.sym];
+    const r = mol.atoms.length===1 ? 11 : 8;
+
+    if(elMeta){
+      const shells = bohrShells(elMeta.z);
+      const outer = Math.min(shells[shells.length-1]||1, 8);
+      const ringR = r+7;
+      for(let k=0;k<outer;k++){
+        const ang = (k/outer)*Math.PI*2 + t*(0.7+idx*0.05);
+        const ex = ax + Math.cos(ang)*ringR;
+        const ey = ay + Math.sin(ang)*ringR*0.55;
+        ctx.beginPath(); ctx.arc(ex,ey,1.3,0,Math.PI*2);
+        ctx.fillStyle='rgba(238,241,250,0.55)';
+        ctx.fill();
+      }
+    }
+
+    ctx.beginPath(); ctx.arc(ax,ay,r,0,Math.PI*2);
+    ctx.fillStyle=c; ctx.shadowColor=c; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillStyle='#0a0e18';
+    ctx.font = (mol.atoms.length===1 ? '700 10px' : '700 8px') + " 'Space Grotesk', sans-serif";
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(a.sym, ax, ay+0.5);
+  });
+}
+
+function renderMolecularPanel(ctx, reaction, t){
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#0c0f16'; ctx.fillRect(0,0,W,H);
+
+  const leftX = 14, rightX = W/2+34;
+  const scale = 1.05;
+
+  ctx.font = "9.5px 'JetBrains Mono', monospace";
+  ctx.fillStyle = '#5b6890'; ctx.textAlign='left';
+  ctx.fillText('REACTANTS', leftX, 12);
+  ctx.fillText('PRODUCTS', rightX, 12);
+
+  const rCount = reaction.reactants.length;
+  reaction.reactants.forEach((key,i)=>{
+    const mol = MOLECULES[key];
+    if(!mol) return;
+    const rowH = (H-24)/rCount;
+    drawMolecule(ctx, leftX, 20 + i*rowH, scale*0.9, mol, t+i*0.4);
+  });
+  const pCount = reaction.products.length;
+  reaction.products.forEach((key,i)=>{
+    const mol = MOLECULES[key];
+    if(!mol) return;
+    const rowH = (H-24)/pCount;
+    drawMolecule(ctx, rightX, 20 + i*rowH, scale*0.9, mol, t+i*0.4);
+  });
+
+  ctx.strokeStyle = 'rgba(45,212,191,0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(W/2-14, H/2);
+  ctx.lineTo(W/2+16, H/2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(W/2+16,H/2);
+  ctx.lineTo(W/2+9,H/2-5);
+  ctx.moveTo(W/2+16,H/2);
+  ctx.lineTo(W/2+9,H/2+5);
+  ctx.stroke();
+}
+
+/* ============================= SHARED SIMULATION MODAL ============================= */
+const simOverlay = document.getElementById('simOverlay');
+const simCanvas = document.getElementById('simCanvas');
+const simCtx = simCanvas.getContext('2d');
+const molCanvas = document.getElementById('molCanvas');
+const molCtx = molCanvas.getContext('2d');
+const simBondLegend = document.getElementById('simBondLegend');
+const simSubtitle = document.getElementById('simSubtitle');
+let simRaf = null;
+
+function closeSim(){
+  simOverlay.classList.remove('open');
+  if(simRaf) cancelAnimationFrame(simRaf);
+}
+document.getElementById('simClose').addEventListener('click', closeSim);
+simOverlay.addEventListener('click', (e)=>{ if(e.target===simOverlay) closeSim(); });
+
+function drawLightRays(ctx, cx, cy, color, t, count){
+  ctx.save();
+  for(let i=0;i<count;i++){
+    const ang = (i/count)*Math.PI*2 + t*1.3;
+    const pulse = 0.4 + 0.6*Math.abs(Math.sin(t*2.4+i));
+    const len = 14 + pulse*16;
+    const x2 = cx + Math.cos(ang)*len;
+    const y2 = cy + Math.sin(ang)*len;
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.15 + pulse*0.35;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(ang)*6, cy + Math.sin(ang)*6);
+    ctx.lineTo(x2,y2);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+/* ---- reaction simulation ---- */
+function openSimulation(r){
+  document.getElementById('simTitle').textContent = r.name;
+  document.getElementById('simEq').textContent = r.eq;
+  document.getElementById('simCond').textContent = '⏱ ' + r.condition;
+  document.getElementById('simNote').textContent = r.note;
+  simSubtitle.textContent = 'Molecular structure & electrons';
+  simBondLegend.style.display = 'flex';
+  document.getElementById('simPhysics').style.display = 'none';
+  document.getElementById('bondTypeLabel').innerHTML = r.bondType==='ionic'
+    ? '<i class="sim-dot" style="background:#ffdd66;"></i> ionic — electron transfers fully'
+    : '<i class="sim-dot" style="background:#8fd6ff;"></i> covalent — electron pair shared';
+
+  const emissionSwatch = document.getElementById('emissionSwatch');
+  const emissionText = document.getElementById('emissionText');
+  if(r.emissionColor){
+    emissionSwatch.style.background = r.emissionColor;
+    emissionSwatch.style.color = r.emissionColor;
+  } else {
+    emissionSwatch.style.background = '#2a3350';
+    emissionSwatch.style.color = 'transparent';
+  }
+  emissionText.textContent = r.emissionLabel || '';
+
+  simOverlay.classList.add('open');
+  if(simRaf) cancelAnimationFrame(simRaf);
+  const W = simCanvas.width, H = simCanvas.height;
+  let particles = [];
+  let flashT = 0;
+  let start = null;
+
+  function rand(a,b){ return a + Math.random()*(b-a); }
+
+  function spawnCombustion(){
+    const baseColor = r.color || '#ff7b1a';
+    for(let i=0;i<3;i++){
+      particles.push({x:W/2+rand(-30,30), y:H-20, vx:rand(-0.3,0.3), vy:rand(-1.6,-0.8), r:rand(4,9), life:0, maxLife:rand(40,70), c:baseColor});
+    }
+  }
+  function spawnFizz(intensity){
+    for(let i=0;i<(intensity==='high'?4:2);i++){
+      particles.push({x:W/2+rand(-18,18), y:H*0.6, vx:rand(-0.4,0.4), vy:rand(-1.2,-0.6), r:rand(2,5), life:0, maxLife:rand(30,55), c:'#dff3ff'});
+    }
+    if(intensity==='high' && Math.random()<0.15) flashT = 6;
+  }
+  function spawnThermite(){
+    for(let i=0;i<4;i++){
+      particles.push({x:W/2+rand(-40,40), y:10, vx:rand(-0.5,0.5), vy:rand(1.2,2.4), r:rand(1.5,3.5), life:0, maxLife:rand(30,50), c: Math.random()<0.5?'#ffd27a':'#fff3cf'});
+    }
+  }
+  function spawnOxidize(){
+    if(Math.random()<0.3) particles.push({x:rand(20,W-20), y:rand(H*0.4,H*0.85), vx:0, vy:rand(0.05,0.15), r:rand(1,2.5), life:0, maxLife:rand(60,100), c:'#c46a35'});
+  }
+  function spawnNeutralize(t){
+    particles.push({x:W/2+rand(-60,60), y:H/2+rand(-30,30), vx:rand(-0.2,0.2), vy:rand(-0.2,0.2), r:rand(1.5,3), life:0, maxLife:rand(30,50), c: Math.sin(t)>0? '#ff9ecf':'#8fd6ff'});
+  }
+  function spawnSynthesis(t){
+    const side = Math.random()<0.5;
+    particles.push({x: side? 20 : W-20, y: rand(40,H-40), vx: side? rand(0.6,1.1) : rand(-1.1,-0.6), vy:rand(-0.1,0.1), r:rand(3,5), life:0, maxLife:120, c: side? (r.colorA||'#ffdd66') : (r.colorB||'#c8ff8f')});
+  }
+  function spawnDecompose(){
+    particles.push({x:W/2+rand(-25,25), y:H-40, vx:rand(-0.2,0.2), vy:rand(-0.9,-0.5), r:rand(3,6), life:0, maxLife:rand(40,65), c:'#bcd4ff'});
+  }
+
+  function draw(ts){
+    if(!start) start=ts;
+    const t = (ts-start)/1000;
+    simCtx.clearRect(0,0,W,H);
+
+    let lightCx = W/2, lightCy = H/2;
+
+    if(r.type==='combustion'){
+      simCtx.fillStyle = '#0c0f16'; simCtx.fillRect(0,0,W,H);
+      simCtx.fillStyle = '#2b2f38'; simCtx.fillRect(W/2-38,H-22,76,22);
+      if(Math.random()<0.9) spawnCombustion();
+      lightCy = H-40;
+    } else if(r.type==='fizz'){
+      simCtx.fillStyle = '#0c0f16'; simCtx.fillRect(0,0,W,H);
+      simCtx.fillStyle = 'rgba(60,120,180,0.35)'; simCtx.fillRect(0,H*0.55,W,H*0.45);
+      simCtx.fillStyle = '#9a9a9a'; simCtx.beginPath(); simCtx.ellipse(W/2, H*0.58, 16, 8, 0, 0, Math.PI*2); simCtx.fill();
+      if(Math.random()<0.8) spawnFizz(r.intensity);
+      if(flashT>0){ simCtx.fillStyle = `rgba(255,255,255,${flashT/10})`; simCtx.fillRect(0,0,W,H); flashT--; }
+      lightCy = H*0.58;
+    } else if(r.type==='thermite'){
+      simCtx.fillStyle = '#0c0f16'; simCtx.fillRect(0,0,W,H);
+      const glow = Math.min(1, t/4);
+      const grad = simCtx.createRadialGradient(W/2,H-20,4,W/2,H-20,60);
+      grad.addColorStop(0, `rgba(255,180,70,${0.5*glow})`);
+      grad.addColorStop(1, 'rgba(255,120,20,0)');
+      simCtx.fillStyle = grad; simCtx.beginPath(); simCtx.ellipse(W/2,H-16,60,20,0,0,Math.PI*2); simCtx.fill();
+      if(Math.random()<0.9) spawnThermite();
+      lightCy = H-20;
+    } else if(r.type==='oxidize'){
+      simCtx.fillStyle = '#171a22'; simCtx.fillRect(0,0,W,H);
+      const p = Math.min(1,(t%6)/6);
+      simCtx.fillStyle = `rgba(120,130,140,1)`; simCtx.fillRect(W*0.25,H*0.35,W*0.5,H*0.4);
+      simCtx.fillStyle = `rgba(180,90,40,${p*0.85})`; simCtx.fillRect(W*0.25,H*0.35,W*0.5,H*0.4);
+      spawnOxidize();
+      simCtx.fillStyle='#8b98bb'; simCtx.font='10px monospace'; simCtx.fillText('days → months of exposure', 14, 20);
+    } else if(r.type==='neutralize'){
+      simCtx.fillStyle = '#0c0f16'; simCtx.fillRect(0,0,W,H);
+      simCtx.fillStyle = 'rgba(255,140,190,0.25)'; simCtx.fillRect(0,0,W/2,H);
+      simCtx.fillStyle = 'rgba(120,190,255,0.25)'; simCtx.fillRect(W/2,0,W/2,H);
+      spawnNeutralize(t*3);
+    } else if(r.type==='synthesis'){
+      simCtx.fillStyle = '#0c0f16'; simCtx.fillRect(0,0,W,H);
+      if(Math.random()<0.5) spawnSynthesis(t);
+    } else if(r.type==='decompose'){
+      simCtx.fillStyle = '#0c0f16'; simCtx.fillRect(0,0,W,H);
+      const shrink = Math.max(20, 55 - t*3);
+      simCtx.fillStyle = '#cfd6e6'; simCtx.fillRect(W/2-30,H-shrink,60,shrink);
+      if(Math.random()<0.6) spawnDecompose();
+      lightCy = H-30;
+    }
+
+    particles.forEach(p=>{
+      p.x += p.vx; p.y += p.vy; p.life++;
+      const lifeRatio = 1 - p.life/p.maxLife;
+      simCtx.globalAlpha = Math.max(0, lifeRatio);
+      simCtx.beginPath();
+      simCtx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      simCtx.fillStyle = p.c;
+      simCtx.shadowColor = p.c; simCtx.shadowBlur = 8;
+      simCtx.fill();
+      simCtx.shadowBlur = 0;
+      simCtx.globalAlpha = 1;
+    });
+    particles = particles.filter(p=> p.life < p.maxLife && p.y > -10 && p.y < H+10);
+
+    if(r.emissionColor){
+      drawLightRays(simCtx, lightCx, lightCy, r.emissionColor, t, 10);
+    }
+
+    renderMolecularPanel(molCtx, r, t);
+
+    simRaf = requestAnimationFrame(draw);
+  }
+  simRaf = requestAnimationFrame(draw);
+}
+
+/* ---- spectral analysis simulation ---- */
+let currentEnergyUnit = 'eV';
+let currentSpectrumEl = null;
+
+function energyStr(p, unit){
+  return unit==='eV' ? `${p.E_eV.toFixed(3)} eV` : `${sci(p.E_J,3)} J`;
+}
+
+function renderPhysicsSteps(el){
+  const spec = el.spectrum;
+  const formulaEl = document.getElementById('physicsFormula');
+  const calcEl = document.getElementById('physicsCalc');
+  const unit = currentEnergyUnit;
+
+  const primaryLines = spec.type==='lines' ? spec.lines : (spec.type==='complex' ? generateComplexLines(el.z,7) : []);
+  if(primaryLines.length){
+    const wl = primaryLines[0];
+    const p = computeLinePhysics(wl);
+    formulaEl.innerHTML = 'E = h·c / λ &nbsp;&nbsp;|&nbsp;&nbsp; ν = c / λ';
+    let steps = `
+      <div class="physics-step">Wavelength observed on the spectrum: <b>λ = ${wl} nm = ${sci(p.wl_m,3)} m</b></div>
+      <div class="physics-step">Frequency: ν = c/λ = ${sci(PHYS.c,3)} / ${sci(p.wl_m,3)} = <b>${sci(p.freq,3)} Hz</b></div>
+      <div class="physics-step result">Photon energy: E = h·ν = ${sci(PHYS.h,3)} × ${sci(p.freq,3)} = <b>${energyStr(p,unit)}</b>${unit==='eV' ? ` &nbsp;(= ${sci(p.E_J,3)} J)` : ` &nbsp;(= ${p.E_eV.toFixed(2)} eV)`}</div>`;
+
+    if(el.sym==='H' && HYDROGEN_BALMER[wl]){
+      const [ni,nf] = HYDROGEN_BALMER[wl];
+      const invLambda = PHYS.R_H*(1/(nf*nf) - 1/(ni*ni));
+      const lambdaCheck = 1/invLambda;
+      steps += `
+      <div class="physics-step" style="margin-top:6px;">Hydrogen's lines follow the <b>Rydberg formula</b>: 1/λ = R(1/n<sub>f</sub>² − 1/n<sub>i</sub>²)</div>
+      <div class="physics-step">Electron falls from shell n=${ni} → n=${nf}: 1/λ = ${sci(PHYS.R_H,3)}×(1/${nf}² − 1/${ni}²) = ${sci(invLambda,3)} m⁻¹</div>
+      <div class="physics-step result">Solving for λ: λ = ${sci(lambdaCheck,3)} m = <b>${Math.round(lambdaCheck*1e9)} nm</b> — matches the line on the graph below</div>`;
+    }
+    calcEl.innerHTML = steps;
+  } else {
+    formulaEl.innerHTML = 'E = h·c / λ';
+    calcEl.innerHTML = `<div class="physics-empty">No confirmed wavelength exists for ${el.name} to plug into the formula — see the note above.</div>`;
+  }
+}
+
+document.getElementById('unitToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.unit-btn');
+  if(!btn) return;
+  currentEnergyUnit = btn.dataset.unit;
+  document.querySelectorAll('.unit-btn').forEach(b=> b.classList.toggle('active', b===btn));
+  if(currentSpectrumEl) renderPhysicsSteps(currentSpectrumEl);
+});
+
+function openSpectrumSim(el){
+  currentSpectrumEl = el;
+  const spec = el.spectrum;
+  document.getElementById('simTitle').textContent = el.name + ' — Spectral Fingerprint';
+  document.getElementById('simEq').textContent = spec.type==='lines'
+    ? spec.lines.map(l=> (l>750?'~'+l:l)+'nm').join(', ')
+    : (spec.type==='complex' ? 'Complex multi-line emission spectrum' : 'No visible spectral lines recorded');
+  simSubtitle.textContent = 'Labeled emission spectrum';
+  simBondLegend.style.display = 'none';
+
+  const emissionSwatch = document.getElementById('emissionSwatch');
+  const emissionText = document.getElementById('emissionText');
+  const primaryColor = spec.lines.length ? wavelengthToRGB(spec.lines[0]) : catColor(el.sym);
+  emissionSwatch.style.background = primaryColor;
+  emissionSwatch.style.color = primaryColor;
+  emissionText.textContent = 'Used in flame tests, astronomical spectroscopy, and lab analysis to fingerprint this element.';
+
+  document.getElementById('simCond').textContent = '🔬 Every element emits light only at wavelengths set by its own electron energy levels';
+  document.getElementById('simNote').textContent = spec.note;
+
+  /* ---- physics formula & worked calculation ---- */
+  const physicsPanel = document.getElementById('simPhysics');
+  physicsPanel.style.display = 'block';
+  renderPhysicsSteps(el);
+
+  simOverlay.classList.add('open');
+  if(simRaf) cancelAnimationFrame(simRaf);
+  const W = simCanvas.width, H = simCanvas.height;
+  let start = null;
+
+  function draw(ts){
+    if(!start) start=ts;
+    const t = (ts-start)/1000;
+    simCtx.clearRect(0,0,W,H);
+    simCtx.fillStyle = '#0c0f16'; simCtx.fillRect(0,0,W,H);
+
+    const srcX = 42, srcY = H/2;
+    const srcColor = catColor(el.sym);
+    simCtx.beginPath(); simCtx.arc(srcX,srcY,10,0,Math.PI*2);
+    simCtx.fillStyle = srcColor; simCtx.shadowColor = srcColor; simCtx.shadowBlur = 16; simCtx.fill(); simCtx.shadowBlur = 0;
+    drawLightRays(simCtx, srcX, srcY, srcColor, t, 8);
+    simCtx.fillStyle = '#5b6890'; simCtx.font = "9px 'JetBrains Mono', monospace"; simCtx.textAlign='center';
+    simCtx.fillText('excited '+el.sym, srcX, srcY+28);
+
+    const pX = 168;
+    simCtx.beginPath();
+    simCtx.moveTo(pX,H/2-32);
+    simCtx.lineTo(pX+36,H/2);
+    simCtx.lineTo(pX,H/2+32);
+    simCtx.closePath();
+    simCtx.fillStyle='rgba(180,200,255,0.14)';
+    simCtx.strokeStyle='rgba(180,200,255,0.45)';
+    simCtx.fill(); simCtx.stroke();
+    simCtx.fillStyle = '#5b6890'; simCtx.fillText('prism', pX+18, H/2+48);
+
+    const bandX = 236, bandY = H/2-24, bandW = W-256, bandH = 48;
+    const lines = drawSpectrumBand(simCtx, bandX, bandY, bandW, bandH, el, t, false);
+
+    // traveling photon dots: source -> prism (white), prism -> band per line (colored)
+    const targets = lines.length ? lines : [560];
+    for(let k=0;k<5;k++){
+      const phase = (t*0.5 + k*0.2) % 1;
+      const targetWl = targets[k % targets.length];
+      const clamped = Math.max(380,Math.min(750,targetWl));
+      const tx = bandX + ((clamped-380)/(750-380))*bandW;
+      let x,y,color;
+      if(phase<0.45){
+        const p = phase/0.45;
+        x = srcX+12 + (pX-srcX-12)*p; y = srcY; color = '#fff';
+      } else {
+        const p = (phase-0.45)/0.55;
+        x = pX+34 + (tx-(pX+34))*p; y = srcY + (bandY+bandH/2-srcY)*p; color = wavelengthToRGB(clamped);
+      }
+      simCtx.beginPath(); simCtx.arc(x,y,2.4,0,Math.PI*2);
+      simCtx.fillStyle = color; simCtx.shadowColor = color; simCtx.shadowBlur = 7; simCtx.fill(); simCtx.shadowBlur = 0;
+    }
+
+    // molCanvas: bigger labeled reference chart
+    molCtx.clearRect(0,0,molCanvas.width,molCanvas.height);
+    molCtx.fillStyle='#0c0f16'; molCtx.fillRect(0,0,molCanvas.width,molCanvas.height);
+    molCtx.fillStyle = '#5b6890'; molCtx.font = "9.5px 'JetBrains Mono', monospace"; molCtx.textAlign='left';
+    molCtx.fillText('VISIBLE RANGE 380–750nm', 12, 14);
+    drawSpectrumBand(molCtx, 12, 24, molCanvas.width-24, 44, el, t, true, true);
+
+    simRaf = requestAnimationFrame(draw);
+  }
+  simRaf = requestAnimationFrame(draw);
+}
+
+/* select Carbon by default for a first impression */
+selectElement(ELEMENTS.find(e=>e.sym==='C'));
+</script>
+</body>
+</html>

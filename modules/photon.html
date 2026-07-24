@@ -1,1 +1,1002 @@
-<html><body style='font-family:Arial;background:#111;color:#fff'><a href='../index.html'>🏠 Home</a><h1>Photon</h1><p>Replace this wrapper with your uploaded application HTML.</p></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photon → Photosynthesis · Photophysics Bench</title>
+<style>
+  :root{
+    --bg:#07070d;
+    --bg2:#0b0c16;
+    --panel:#0e0f1c;
+    --panel2:#12132400;
+    --ink:#e7ecff;
+    --muted:#8a90b8;
+    --faint:#565c86;
+    --line:#1e2140;
+    --line2:#2a2e58;
+    --cyan:#37e0ff;
+    --violet:#9b6bff;
+    --gold:#ffd166;
+    --green:#5dffa0;
+    --red:#ff5d7a;
+    --grid:rgba(120,140,255,.06);
+    --mono: ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans: "Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(1200px 600px at 12% -10%, rgba(55,224,255,.07), transparent 60%),
+      radial-gradient(1000px 700px at 100% 0%, rgba(155,107,255,.08), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:.2px;
+  }
+  header{
+    display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+    padding:18px 22px 14px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(15,16,30,.9),rgba(7,7,13,.2));
+    position:sticky;top:0;z-index:20;backdrop-filter:blur(6px);
+  }
+  header h1{
+    font-size:19px;font-weight:650;margin:0;letter-spacing:.4px;
+    background:linear-gradient(90deg,#ff5d7a,#ffd166,#5dffa0,#37e0ff,#9b6bff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  header .sub{color:var(--muted);font-size:12.5px;font-family:var(--mono)}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .ctl{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  button.play{
+    font-family:var(--mono);font-size:12px;cursor:pointer;
+    background:rgba(55,224,255,.09);color:var(--cyan);
+    border:1px solid rgba(55,224,255,.35);border-radius:7px;padding:7px 13px;
+    transition:.15s;
+  }
+  button.play:hover{background:rgba(55,224,255,.18);box-shadow:0 0 16px rgba(55,224,255,.25)}
+  button.ghost{
+    font-family:var(--mono);font-size:12px;cursor:pointer;
+    background:transparent;color:var(--muted);
+    border:1px solid var(--line2);border-radius:7px;padding:7px 11px;transition:.15s;
+  }
+  button.ghost:hover{color:var(--ink);border-color:var(--faint)}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;height:3px;border-radius:3px;
+    background:linear-gradient(90deg,var(--line2),var(--faint));outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:13px;height:13px;border-radius:50%;
+    background:var(--cyan);box-shadow:0 0 10px rgba(55,224,255,.7);border:0;cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;border-radius:50%;background:var(--cyan);
+    box-shadow:0 0 10px rgba(55,224,255,.7);border:0;cursor:pointer;
+  }
+
+  main{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;
+    padding:14px;max-width:1500px;margin:0 auto;
+  }
+  .pane{
+    background:linear-gradient(180deg,var(--panel),#090a14);
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    display:flex;flex-direction:column;min-height:340px;position:relative;
+  }
+  .pane.wide{grid-column:1 / -1}
+  .pane-head{
+    display:flex;align-items:center;gap:12px;padding:12px 15px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  .tag{
+    font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:1.2px;
+    padding:3px 8px;border-radius:5px;border:1px solid;
+  }
+  .tag.a{color:var(--gold);border-color:rgba(255,209,102,.4);background:rgba(255,209,102,.06)}
+  .tag.b{color:var(--green);border-color:rgba(93,255,160,.4);background:rgba(93,255,160,.06)}
+  .tag.c{color:var(--cyan);border-color:rgba(55,224,255,.4);background:rgba(55,224,255,.06)}
+  .tag.d{color:var(--violet);border-color:rgba(155,107,255,.4);background:rgba(155,107,255,.06)}
+  .pane-head h2{margin:0;font-size:14.5px;font-weight:600}
+  .pane-head .eq{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  .canvas-wrap{position:relative;flex:1;min-height:0}
+  canvas{display:block;width:100%;height:100%}
+  .pane-foot{
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    padding:10px 15px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:11.5px;color:var(--muted);
+  }
+  .pane-foot .rd{color:var(--ink)}
+  .pane-foot .rd b{color:var(--cyan);font-weight:600}
+  .legend{display:flex;gap:14px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .toggle{display:inline-flex;gap:0;border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+  .toggle button{
+    font-family:var(--mono);font-size:11px;background:transparent;color:var(--muted);
+    border:0;padding:5px 10px;cursor:pointer;transition:.12s;
+  }
+  .toggle button.on{background:rgba(55,224,255,.14);color:var(--cyan)}
+  .note{padding:10px 22px 26px;color:var(--faint);font-size:11.5px;font-family:var(--mono);
+    max-width:1500px;margin:0 auto;line-height:1.6}
+  .note b{color:var(--muted)}
+  /* brand */
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand svg{display:block;filter:drop-shadow(0 0 10px rgba(93,255,160,.35))}
+  .brand .logo-spark{animation:spark 2.6s ease-in-out infinite}
+  @keyframes spark{
+    0%,100%{opacity:.55;transform:scale(.9)}
+    50%{opacity:1;transform:scale(1.15)}
+  }
+  .brand-div{width:1px;height:30px;background:var(--line2);margin:0 4px}
+  /* cell pane */
+  @media(max-width:900px){
+    main{grid-template-columns:1fr}
+    .pane.wide{grid-column:auto}
+    .controls{width:100%;margin-left:0}
+    .brand svg{width:112px}
+    header h1{font-size:16px}
+  }
+  @media(prefers-reduced-motion: reduce){
+    .brand .logo-spark{animation:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" title="QVDA Technologies">
+    <svg width="150" height="36" viewBox="0 0 150 36" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QVDA Technologies">
+      <defs>
+        <linearGradient id="qg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#5dffa0"/>
+          <stop offset="0.5" stop-color="#37e0ff"/>
+          <stop offset="1" stop-color="#9b6bff"/>
+        </linearGradient>
+        <linearGradient id="wg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#eafff4"/>
+          <stop offset="1" stop-color="#bfe6ff"/>
+        </linearGradient>
+      </defs>
+      <!-- mark: chloroplast lens holding a photon spark -->
+      <g transform="translate(4,3)">
+        <rect x="0.8" y="0.8" width="28.4" height="28.4" rx="8"
+              fill="rgba(55,224,255,.06)" stroke="url(#qg)" stroke-width="1.6"/>
+        <!-- leaf/lens -->
+        <ellipse cx="15" cy="15" rx="10.5" ry="6.2" transform="rotate(-32 15 15)"
+                 fill="none" stroke="url(#qg)" stroke-width="1.7"/>
+        <path d="M6 20 Q15 8 24 20" fill="none" stroke="url(#qg)" stroke-width="1.3" opacity="0.75"/>
+        <!-- photon spark -->
+        <circle class="logo-spark" cx="15" cy="15" r="3.1" fill="#eafff4"/>
+      </g>
+      <!-- wordmark -->
+      <text x="40" y="17" font-family="'Segoe UI',system-ui,sans-serif" font-size="16.5"
+            font-weight="700" letter-spacing="3" fill="url(#wg)">QVDA</text>
+      <text x="41" y="29" font-family="ui-monospace,monospace" font-size="7.2"
+            letter-spacing="3.1" fill="#5a6090">TECHNOLOGIES</text>
+    </svg>
+  </div>
+  <div class="brand-div"></div>
+  <h1>Photon → Photosynthesis</h1>
+  <span class="sub">photophysics bench · fs → ms</span>
+  <div class="controls">
+    <div class="ctl">
+      <span>speed</span>
+      <input id="speed" type="range" min="0.15" max="3" step="0.05" value="1" style="width:110px">
+      <span id="speedRd" style="color:var(--cyan);width:34px">1.0×</span>
+    </div>
+    <button class="play" id="playBtn">❚❚ pause</button>
+    <button class="ghost" id="resetBtn">↺ reset</button>
+  </div>
+</header>
+
+<main>
+  <!-- PANE 1 : FLOW -->
+  <section class="pane wide">
+    <div class="pane-head">
+      <span class="tag a">01 · FLOW</span>
+      <h2>White light falls → dispersed → absorbed → carried through the phases</h2>
+      <span class="eq">log t · 1 fs → 1 ms</span>
+    </div>
+    <div class="canvas-wrap"><canvas id="cFlow"></canvas></div>
+    <div class="pane-foot">
+      <div class="rd">stage: <b id="flowStage">—</b></div>
+      <div class="rd">elapsed: <b id="flowTime">—</b></div>
+      <div class="legend">
+        <span><i class="dot" style="color:#ff5d7a">●</i>red/blue absorbed</span>
+        <span><i class="dot" style="color:#5dffa0">●</i>green transmitted</span>
+        <span><i class="dot" style="color:#37e0ff">●</i>exciton packet</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANE 2 : ABSORPTION -->
+  <section class="pane">
+    <div class="pane-head">
+      <span class="tag b">02 · ABSORPTION</span>
+      <h2>Chlorophyll spectrum · Soret + Qᵧ · the green gap</h2>
+    </div>
+    <div class="canvas-wrap"><canvas id="cSpec"></canvas></div>
+    <div class="pane-foot">
+      <div class="ctl" style="color:var(--muted)">
+        <span>λ</span>
+        <input id="lam" type="range" min="380" max="700" step="1" value="662" style="width:130px">
+        <span id="lamRd" class="rd"><b>662</b> nm</span>
+      </div>
+      <div class="rd">A(λ): <b id="absRd">—</b> · <span id="fateRd">—</span></div>
+      <div class="toggle" id="chlToggle">
+        <button data-c="a" class="on">Chl a</button>
+        <button data-c="b" class="on">Chl b</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANE 3 : EXCITON -->
+  <section class="pane">
+    <div class="pane-head">
+      <span class="tag c">03 · EXCITON</span>
+      <h2>Delocalized Frenkel exciton · antenna funnel → RC</h2>
+      <span class="eq">Jₙₘ ∝ r⁻³</span>
+    </div>
+    <div class="canvas-wrap"><canvas id="cExc"></canvas></div>
+    <div class="pane-foot">
+      <div class="ctl" style="color:var(--muted)">
+        <span>coupling J</span>
+        <input id="coupling" type="range" min="0" max="1" step="0.01" value="0.62" style="width:100px">
+      </div>
+      <div class="ctl" style="color:var(--muted)">
+        <span>disorder</span>
+        <input id="disorder" type="range" min="0" max="1" step="0.01" value="0.28" style="width:90px">
+      </div>
+      <div class="rd">delocalization: <b id="delocRd">—</b> sites</div>
+    </div>
+  </section>
+
+  <!-- PANE 4 : CHARGE SEPARATION -->
+  <section class="pane wide">
+    <div class="pane-head">
+      <span class="tag d">04 · CHARGE SEPARATION</span>
+      <h2>Reaction-centre cascade · Marcus theory · why recombination loses</h2>
+      <span class="eq">k ∝ exp[−(ΔG°+λ)²⁄4λk_BT]</span>
+    </div>
+    <div class="canvas-wrap"><canvas id="cChg"></canvas></div>
+    <div class="pane-foot">
+      <div class="ctl" style="color:var(--muted)">
+        <span>−ΔG°</span>
+        <input id="dg" type="range" min="0.05" max="2.4" step="0.01" value="0.6" style="width:150px">
+        <span id="dgRd" class="rd"><b>0.60</b> eV</span>
+      </div>
+      <div class="rd">regime: <b id="regimeRd">—</b></div>
+      <div class="rd">rel. rate: <b id="rateRd">—</b></div>
+      <div class="rd">quantum yield: <b style="color:var(--green)">≈ 1.0</b></div>
+    </div>
+  </section>
+</main>
+
+<p class="note">
+  <b>Model notes.</b> Absorption curves are Gaussian fits to Chl a / Chl b (Soret ≈ 430/453 nm, Qᵧ ≈ 662/642 nm, solution values).
+  Flow uses a logarithmic time axis with representative timescales (absorption ~fs · internal conversion ~100 fs · exciton hop ~fs–ps · antenna→RC ~10 ps · charge separation ~3 ps · Qₐ ~200 ps · recombination avoided ns–ms).
+  Exciton delocalization is illustrative — glow spread scales with J⁄disorder, not a full Hamiltonian diagonalization.
+  Marcus rate uses λ ≈ 0.8 eV, k_BT ≈ 0.025 eV; the peak at −ΔG°=λ is activationless, beyond it is the inverted region where recombination is parked.
+</p>
+
+<script>
+"use strict";
+/* ============================================================
+   Photon → Photosynthesis · single-file photophysics bench
+   ============================================================ */
+
+/* ---------- global clock ---------- */
+const Clock = {
+  running:true, speed:1, t:0,
+  toggle(){ this.running=!this.running; },
+  reset(){ this.t=0; Flow.reset(); Exciton.reset(); Charge.reset(); }
+};
+
+/* ---------- wavelength -> RGB (Bruton approximation) ---------- */
+function wl2rgb(nm){
+  let r=0,g=0,b=0;
+  if(nm>=380&&nm<440){ r=-(nm-440)/(440-380); b=1; }
+  else if(nm<490){ g=(nm-440)/(490-440); b=1; }
+  else if(nm<510){ g=1; b=-(nm-510)/(510-490); }
+  else if(nm<580){ r=(nm-510)/(580-510); g=1; }
+  else if(nm<645){ r=1; g=-(nm-645)/(645-580); }
+  else if(nm<=780){ r=1; }
+  let f=1;
+  if(nm<420) f=0.3+0.7*(nm-380)/(420-380);
+  else if(nm>700) f=0.3+0.7*(780-nm)/(780-700);
+  const g2=x=>Math.round(255*Math.pow(Math.max(0,x)*f,0.8));
+  return [g2(r),g2(g),g2(b)];
+}
+function rgbStr(nm,a=1){ const c=wl2rgb(nm); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+
+/* ---------- chlorophyll absorption (sum of gaussians) ---------- */
+function gauss(x,mu,amp,sig){ return amp*Math.exp(-((x-mu)*(x-mu))/(2*sig*sig)); }
+function chlA(nm){
+  return gauss(nm,430,1.00,17)+gauss(nm,410,0.42,14)+gauss(nm,662,0.74,15)+gauss(nm,617,0.14,16);
+}
+function chlB(nm){
+  return gauss(nm,453,0.86,17)+gauss(nm,642,0.52,13)+gauss(nm,596,0.10,14);
+}
+function absAt(nm, useA, useB){
+  let v=0; if(useA)v+=chlA(nm); if(useB)v+=chlB(nm);
+  return Math.min(1.35,v);
+}
+
+/* ---------- canvas helper ---------- */
+function setup(id){
+  const cv=document.getElementById(id);
+  const ctx=cv.getContext("2d");
+  function resize(){
+    const dpr=Math.min(2,window.devicePixelRatio||1);
+    const r=cv.getBoundingClientRect();
+    cv.width=Math.max(1,r.width*dpr); cv.height=Math.max(1,r.height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    cv._w=r.width; cv._h=r.height;
+  }
+  return {cv,ctx,resize};
+}
+
+/* ============================================================
+   PANE 1 · FLOW  (the hero: light falls, disperses, is carried)
+   ============================================================ */
+const Flow = (()=>{
+  const {cv,ctx,resize}=setup("cFlow");
+  // stages along a log-time track (fraction 0..1 of track width) + label + time
+  const stages=[
+    {x:0.10,label:"Absorption",       t:"~1 fs",   color:"#ffd166"},
+    {x:0.26,label:"Internal conv → Qᵧ",t:"~100 fs", color:"#ff9d5c"},
+    {x:0.44,label:"Exciton hop",      t:"~500 fs", color:"#37e0ff"},
+    {x:0.62,label:"Antenna → RC",     t:"~20 ps",  color:"#37e0ff"},
+    {x:0.78,label:"Charge separation",t:"~3 ps",   color:"#9b6bff"},
+    {x:0.92,label:"Qₐ stabilized",    t:"~200 ps", color:"#5dffa0"},
+  ];
+  let cyc=0;               // 0..1 loop position of the exciton pulse
+  let photons=[];          // dispersed spectral rays
+  let litT=stages.map(()=>0);   // per-station afterglow
+  let sparks=[];           // glowing dust streaming off the packet
+  let emitAcc=0;
+  const CYCLE=7.2;         // seconds per full journey
+  function reset(){ cyc=0; photons=[]; sparks=[]; litT=stages.map(()=>0); }
+
+  function draw(dt){
+    const w=cv._w,h=cv._h; ctx.clearRect(0,0,w,h);
+    // --- geometry
+    const sunX=w*0.065, sunY=h*0.5;
+    const prismX=w*0.19;                 // leaf surface / disperser
+    const trackY=h*0.5, trackX0=w*0.30, trackX1=w*0.965;
+    const trackW=trackX1-trackX0;
+
+    // advance loop
+    cyc += (dt/CYCLE);
+    if(cyc>1) cyc-=1;
+
+    /* ---- incoming white beam ---- */
+    const beamPulse=0.55+0.45*Math.sin(Clock.t*6);
+    let bg=ctx.createLinearGradient(sunX,0,prismX,0);
+    bg.addColorStop(0,`rgba(255,255,255,${0.9*beamPulse})`);
+    bg.addColorStop(1,`rgba(255,255,255,0.15)`);
+    ctx.strokeStyle=bg; ctx.lineWidth=3.2; ctx.shadowBlur=18; ctx.shadowColor="rgba(255,255,255,.7)";
+    ctx.beginPath(); ctx.moveTo(sunX,sunY); ctx.lineTo(prismX,sunY); ctx.stroke();
+    ctx.shadowBlur=0;
+
+    // sun
+    const sg=ctx.createRadialGradient(sunX,sunY,1,sunX,sunY,26);
+    sg.addColorStop(0,"#ffffff"); sg.addColorStop(.4,"#fff4d0"); sg.addColorStop(1,"rgba(255,209,102,0)");
+    ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sunX,sunY,26,0,7); ctx.fill();
+    ctx.fillStyle="#0a0a12"; ctx.font="10px var(--mono),monospace"; ctx.textAlign="center";
+    ctx.fillStyle="#8a90b8"; ctx.fillText("white light", sunX, sunY+40);
+
+    /* ---- disperser (leaf/chloroplast face) ---- */
+    ctx.fillStyle="rgba(93,255,160,.09)";
+    ctx.strokeStyle="rgba(93,255,160,.5)"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.roundRect(prismX-7,h*0.16,14,h*0.68,4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#5dffa0"; ctx.font="10px var(--mono),monospace";
+    ctx.fillText("thylakoid", prismX, h*0.135);
+
+    /* ---- spectral fan: white splits into bands ---- */
+    const bands=[[410,-0.26],[440,-0.17],[480,-0.08],[530,0.0],[580,0.08],[620,0.17],[665,0.26]];
+    const fanX0=prismX+6, fanReach=trackX0-14;
+    for(const [nm,spread] of bands){
+      const y1=sunY, y2=sunY+spread*h*0.9;
+      const absorbed = nm<500 || nm>600;      // red & blue absorbed, green passes
+      const a=absorbed?0.85:0.9;
+      const grd=ctx.createLinearGradient(fanX0,y1,fanReach,y2);
+      grd.addColorStop(0,rgbStr(nm,0.15));
+      grd.addColorStop(0.5,rgbStr(nm,a));
+      grd.addColorStop(1,rgbStr(nm, absorbed?0.0:0.55));
+      ctx.strokeStyle=grd; ctx.lineWidth= absorbed?2.4:2.0;
+      ctx.shadowBlur=10; ctx.shadowColor=rgbStr(nm,.6);
+      ctx.beginPath(); ctx.moveTo(fanX0,y1);
+      const midX=(fanX0+fanReach)/2;
+      ctx.quadraticCurveTo(midX,y1,fanReach,y2); ctx.stroke();
+      ctx.shadowBlur=0;
+      // absorbed bands terminate in a little "absorbed" flare; green escapes upward
+      if(absorbed){
+        const fl=0.5+0.5*Math.sin(Clock.t*8+nm);
+        ctx.fillStyle=rgbStr(nm,0.5*fl);
+        ctx.beginPath(); ctx.arc(fanReach,y2,3.2+fl*1.5,0,7); ctx.fill();
+      }else{
+        // transmitted green ray continues past, faint
+        ctx.strokeStyle=rgbStr(nm,0.28); ctx.lineWidth=1.6;
+        ctx.beginPath(); ctx.moveTo(fanReach,y2); ctx.lineTo(fanReach+26,y2-14); ctx.stroke();
+      }
+    }
+    ctx.textAlign="left";
+    ctx.fillStyle="#565c86"; ctx.font="9.5px var(--mono),monospace";
+    ctx.fillText("green gap →", fanReach+8, sunY-20);
+
+    /* ---- the time-series track ---- */
+    // log grid ticks
+    ctx.strokeStyle="rgba(120,140,255,.08)"; ctx.lineWidth=1;
+    ctx.fillStyle="#565c86"; ctx.font="9px var(--mono),monospace"; ctx.textAlign="center";
+    const ticks=[["fs",0.10],["10fs",0.22],["100fs",0.34],["ps",0.5],["10ps",0.64],["100ps",0.82],["ns→ms",0.96]];
+    for(const [lab,fx] of ticks){
+      const x=trackX0+trackW*fx;
+      ctx.beginPath(); ctx.moveTo(x,trackY-70); ctx.lineTo(x,trackY+70); ctx.stroke();
+      ctx.fillStyle="#4a4f78"; ctx.fillText(lab,x,trackY+84);
+    }
+    // baseline track
+    ctx.strokeStyle="rgba(120,140,255,.25)"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(trackX0,trackY); ctx.lineTo(trackX1,trackY); ctx.stroke();
+
+    // pulse position + colour (gold→cyan→violet→green along the journey)
+    const pos=cyc;
+    const pulseX=trackX0+trackW*pos;
+    let pc;
+    if(pos<0.30) pc=[255,209,102];
+    else if(pos<0.55) pc=[55,224,255];
+    else if(pos<0.85) pc=[155,107,255];
+    else pc=[93,255,160];
+
+    /* ---- illuminated trail: the path the light has already swept ---- */
+    ctx.save(); ctx.lineCap="round";
+    const tg=ctx.createLinearGradient(trackX0,0,pulseX,0);
+    tg.addColorStop(0,`rgba(${pc[0]},${pc[1]},${pc[2]},0)`);
+    tg.addColorStop(0.65,`rgba(${pc[0]},${pc[1]},${pc[2]},0.28)`);
+    tg.addColorStop(1,`rgba(${pc[0]},${pc[1]},${pc[2]},0.9)`);
+    ctx.strokeStyle=tg; ctx.lineWidth=6; ctx.shadowBlur=20; ctx.shadowColor=`rgb(${pc[0]},${pc[1]},${pc[2]})`;
+    ctx.beginPath(); ctx.moveTo(trackX0,trackY); ctx.lineTo(pulseX,trackY); ctx.stroke();
+    ctx.shadowBlur=0; ctx.lineWidth=2;
+    const tg2=ctx.createLinearGradient(trackX0,0,pulseX,0);
+    tg2.addColorStop(0,`rgba(255,255,255,0)`); tg2.addColorStop(1,`rgba(255,255,255,0.85)`);
+    ctx.strokeStyle=tg2; ctx.beginPath(); ctx.moveTo(trackX0,trackY); ctx.lineTo(pulseX,trackY); ctx.stroke();
+    ctx.restore();
+
+    /* ---- stations ignite as the wavefront sweeps, then afterglow ---- */
+    let activeStage=stages[0];
+    for(let i=0;i<stages.length;i++){
+      const s=stages[i]; const x=trackX0+trackW*s.x;
+      const near=Math.max(0,1-Math.min(1,Math.abs(pos-s.x)/0.07));
+      if(pos<0.03) litT[i]=0;                         // reset each loop
+      if(pos>=s.x && pos-s.x<0.03 && litT[i]<0.02) litT[i]=1;  // ignite on arrival
+      litT[i]=Math.max(litT[i]-dt*0.30,0);
+      const lit=Math.max(near,litT[i]);
+      if(pos>=s.x-0.02) activeStage=s;
+      // expanding ignition ring at the moment of arrival
+      if(near>0.25){
+        ctx.strokeStyle=`rgba(255,255,255,${near*0.5})`; ctx.lineWidth=1.4;
+        ctx.beginPath(); ctx.arc(x,trackY,9+(1-near)*18,0,7); ctx.stroke();
+      }
+      ctx.shadowBlur=lit*26; ctx.shadowColor=s.color;
+      ctx.fillStyle= lit>0.05? s.color : "#1a1d3a";
+      ctx.beginPath(); ctx.arc(x,trackY,5+lit*3.5,0,7); ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.strokeStyle=`rgba(255,255,255,${0.08+lit*0.45})`; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.arc(x,trackY,9+lit*4,0,7); ctx.stroke();
+      const up=i%2===0; const ly=up?trackY-30:trackY+34;
+      ctx.textAlign="center";
+      ctx.fillStyle=`rgba(231,236,255,${0.4+lit*0.6})`;
+      ctx.font=`${lit>0.3?"600 ":""}10.5px var(--sans),sans-serif`;
+      ctx.fillText(s.label,x,ly);
+      ctx.fillStyle=`rgba(138,144,184,${0.45+lit*0.5})`;
+      ctx.font="9px var(--mono),monospace";
+      ctx.fillText(s.t,x,up?ly-13:ly+13);
+    }
+
+    /* ---- spark dust streaming off the moving light (falls behind = motion cue) ---- */
+    emitAcc+=dt;
+    while(emitAcc>0.016){ emitAcc-=0.016;
+      sparks.push({x:pulseX,y:trackY,vx:-(25+Math.random()*80),vy:(Math.random()-0.5)*40,
+        life:0,ttl:0.45+Math.random()*0.55,c:pc.slice()});
+    }
+    for(const sp of sparks){
+      sp.life+=dt; sp.x+=sp.vx*dt; sp.y+=sp.vy*dt; sp.vy*=0.95;
+      const a=Math.max(0,1-sp.life/sp.ttl);
+      ctx.shadowBlur=6*a; ctx.shadowColor=`rgb(${sp.c[0]},${sp.c[1]},${sp.c[2]})`;
+      ctx.fillStyle=`rgba(${sp.c[0]},${sp.c[1]},${sp.c[2]},${a*0.8})`;
+      ctx.beginPath(); ctx.arc(sp.x,sp.y,1.6*a+0.6,0,7); ctx.fill();
+    }
+    ctx.shadowBlur=0;
+    sparks=sparks.filter(sp=>sp.life<sp.ttl);
+
+    /* ---- the moving glowing packet: long tail + wavefront + bright core ---- */
+    for(let k=14;k>=0;k--){
+      const tp=Math.max(0,pos-k*0.010); const tx=trackX0+trackW*tp;
+      const a=(1-k/15);
+      ctx.fillStyle=`rgba(${pc[0]},${pc[1]},${pc[2]},${a*a*0.5})`;
+      ctx.beginPath(); ctx.arc(tx,trackY,8-k*0.4,0,7); ctx.fill();
+    }
+    const wfX=Math.min(trackX1,pulseX+10);
+    const wf=ctx.createRadialGradient(wfX,trackY,1,wfX,trackY,30);
+    wf.addColorStop(0,`rgba(255,255,255,.45)`);
+    wf.addColorStop(1,`rgba(${pc[0]},${pc[1]},${pc[2]},0)`);
+    ctx.fillStyle=wf; ctx.beginPath(); ctx.arc(wfX,trackY,30,0,7); ctx.fill();
+    ctx.shadowBlur=28; ctx.shadowColor=`rgb(${pc[0]},${pc[1]},${pc[2]})`;
+    const core=ctx.createRadialGradient(pulseX,trackY,1,pulseX,trackY,24);
+    core.addColorStop(0,`rgba(255,255,255,1)`);
+    core.addColorStop(.3,`rgba(${pc[0]},${pc[1]},${pc[2]},.95)`);
+    core.addColorStop(1,`rgba(${pc[0]},${pc[1]},${pc[2]},0)`);
+    ctx.fillStyle=core; ctx.beginPath(); ctx.arc(pulseX,trackY,24,0,7); ctx.fill();
+    ctx.shadowBlur=0;
+
+    // feed line from absorbed spectral band into the start of the track
+    if(pos<0.12){
+      const a=1-pos/0.12;
+      ctx.strokeStyle=`rgba(255,209,102,${a*0.7})`; ctx.lineWidth=2.2;
+      ctx.shadowBlur=14;ctx.shadowColor="#ffd166";
+      ctx.beginPath(); ctx.moveTo(fanReach-6,sunY-0.26*h*0.9);
+      ctx.lineTo(trackX0+trackW*0.10,trackY); ctx.stroke();
+      ctx.shadowBlur=0;
+    }
+
+    // readouts
+    document.getElementById("flowStage").textContent=activeStage.label;
+    document.getElementById("flowTime").textContent=activeStage.t;
+  }
+  return {draw,reset};
+})();
+
+/* ============================================================
+   PANE 2 · ABSORPTION spectrum
+   ============================================================ */
+const Spectrum = (()=>{
+  const {cv,ctx,resize}=setup("cSpec");
+  let lam=662, useA=true, useB=true;
+  let rain=[];   // falling photons of current wavelength
+  let acc=0;
+
+  document.getElementById("lam").addEventListener("input",e=>{
+    lam=+e.target.value; document.getElementById("lamRd").innerHTML=`<b>${lam}</b> nm`;
+  });
+  document.getElementById("chlToggle").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b)return;
+    b.classList.toggle("on");
+    if(b.dataset.c==="a") useA=b.classList.contains("on");
+    else useB=b.classList.contains("on");
+  });
+
+  function draw(dt){
+    const w=cv._w,h=cv._h; ctx.clearRect(0,0,w,h);
+    const padL=42,padR=14,padT=16,padB=40;
+    const x0=padL,x1=w-padR,y0=h-padB,y1=padT;
+    const nm0=380,nm1=700;
+    const X=nm=> x0+(nm-nm0)/(nm1-nm0)*(x1-x0);
+    const Ymax=1.15;
+    const Y=a=> y0-(a/Ymax)*(y0-y1);
+
+    // spectrum strip along x-axis
+    for(let px=x0;px<x1;px+=2){
+      const nm=nm0+(px-x0)/(x1-x0)*(nm1-nm0);
+      ctx.fillStyle=rgbStr(nm,0.5);
+      ctx.fillRect(px,y0+6,2,10);
+    }
+    // grid
+    ctx.strokeStyle="rgba(120,140,255,.07)";ctx.lineWidth=1;
+    ctx.fillStyle="#4a4f78";ctx.font="9px var(--mono),monospace";ctx.textAlign="center";
+    for(let nm=400;nm<=700;nm+=50){
+      const x=X(nm); ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y0);ctx.stroke();
+      ctx.fillText(nm,x,y0+30);
+    }
+    ctx.textAlign="right";
+    for(let a=0;a<=1;a+=0.5){
+      const y=Y(a);ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();
+      ctx.fillText(a.toFixed(1),x0-6,y+3);
+    }
+    ctx.save();ctx.translate(13,(y0+y1)/2);ctx.rotate(-Math.PI/2);
+    ctx.textAlign="center";ctx.fillStyle="#8a90b8";ctx.fillText("absorbance (norm.)",0,0);ctx.restore();
+
+    // green gap shading
+    ctx.fillStyle="rgba(93,255,160,.05)";
+    ctx.fillRect(X(500),y1,X(600)-X(500),y0-y1);
+    ctx.fillStyle="rgba(93,255,160,.5)";ctx.font="9.5px var(--mono),monospace";ctx.textAlign="center";
+    ctx.fillText("green gap",(X(500)+X(600))/2,y1+12);
+
+    // curve helper
+    function curve(fn,col,fill){
+      ctx.beginPath();
+      for(let nm=nm0;nm<=nm1;nm+=1){ const x=X(nm),y=Y(Math.min(Ymax,fn(nm)));
+        if(nm===nm0)ctx.moveTo(x,y);else ctx.lineTo(x,y); }
+      if(fill){ ctx.lineTo(X(nm1),y0);ctx.lineTo(X(nm0),y0);ctx.closePath();
+        ctx.fillStyle=fill;ctx.fill(); }
+      else{ ctx.strokeStyle=col;ctx.lineWidth=2;ctx.shadowBlur=8;ctx.shadowColor=col;
+        ctx.stroke();ctx.shadowBlur=0; }
+    }
+    if(useA){ curve(chlA,null,"rgba(93,255,160,.08)"); curve(chlA,"#5dffa0"); }
+    if(useB){ curve(chlB,null,"rgba(55,224,255,.06)"); curve(chlB,"#37e0ff"); }
+
+    // peak labels
+    ctx.fillStyle="#8a90b8";ctx.font="9px var(--mono),monospace";ctx.textAlign="center";
+    if(useA){ ctx.fillText("Soret",X(430),Y(chlA(430))-8); ctx.fillText("Qᵧ",X(662),Y(chlA(662))-8); }
+
+    // total absorption at lambda
+    const A=absAt(lam,useA,useB);
+    const cx=X(lam);
+    ctx.strokeStyle=rgbStr(lam,.8);ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(cx,y1);ctx.lineTo(cx,y0);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=rgbStr(lam,1);ctx.shadowBlur=12;ctx.shadowColor=rgbStr(lam,1);
+    ctx.beginPath();ctx.arc(cx,Y(Math.min(Ymax,A)),4,0,7);ctx.fill();ctx.shadowBlur=0;
+
+    // ---- falling photons demo (absorbed vs transmitted) ----
+    acc+=dt;
+    const pAbs=Math.min(1,A/1.1);
+    if(acc>0.10){ acc=0;
+      rain.push({x:cx+(Math.random()*24-12),y:y1-4,v:60+Math.random()*40,
+        absorbed:Math.random()<pAbs, hit:false, nm:lam, life:0});
+    }
+    for(const p of rain){
+      p.life+=dt;
+      const targetY = p.absorbed? Y(Math.min(Ymax,A)) : y0+4;
+      if(!p.hit){ p.y+=p.v*dt; if(p.y>=targetY){ p.y=targetY; p.hit=true; } }
+      const fade = p.hit? Math.max(0,1-(p.life-((targetY-y1)/p.v))*2) : 1;
+      ctx.fillStyle=rgbStr(p.nm, p.hit?0.7*fade:0.9);
+      ctx.shadowBlur=8;ctx.shadowColor=rgbStr(p.nm,.8);
+      ctx.beginPath();ctx.arc(p.x,p.y,p.hit?4.5:2.6,0,7);ctx.fill();ctx.shadowBlur=0;
+      if(p.hit && p.absorbed){ // absorption starburst
+        ctx.strokeStyle=rgbStr(p.nm,0.5*fade);ctx.lineWidth=1;
+        for(let a=0;a<6;a++){const an=a*Math.PI/3+p.life*4;
+          ctx.beginPath();ctx.moveTo(p.x,p.y);
+          ctx.lineTo(p.x+Math.cos(an)*(4+p.life*10),p.y+Math.sin(an)*(4+p.life*10));ctx.stroke();}
+      }
+    }
+    rain=rain.filter(p=>p.life<2 && p.y<y0+30);
+
+    // readouts
+    document.getElementById("absRd").textContent=A.toFixed(2);
+    const fate=document.getElementById("fateRd");
+    if(A>0.6){ fate.innerHTML='<span style="color:#ff5d7a">absorbed ✓</span>'; }
+    else if(A>0.25){ fate.innerHTML='<span style="color:#ffd166">partly absorbed</span>'; }
+    else { fate.innerHTML='<span style="color:#5dffa0">transmitted (green gap)</span>'; }
+  }
+  return {draw};
+})();
+
+/* ============================================================
+   PANE 3 · EXCITON  (delocalized, funnel to RC)
+   ============================================================ */
+const Exciton = (()=>{
+  const {cv,ctx,resize}=setup("cExc");
+  let J=0.62, dis=0.28;
+  let sites=[];          // ring of pigments
+  let rc=null;
+  let excCenter=0;       // index (float) of exciton centre on the ring
+  let excVel=0.9;
+  let toRC=0;            // 0..1 progress of transfer to RC once "trapped"
+  const N=14;
+
+  document.getElementById("coupling").addEventListener("input",e=>J=+e.target.value);
+  document.getElementById("disorder").addEventListener("input",e=>dis=+e.target.value);
+
+  function build(){
+    const w=cv._w,h=cv._h;
+    const cx=w*0.5, cy=h*0.46, R=Math.min(w,h)*0.30;
+    sites=[];
+    for(let i=0;i<N;i++){
+      const ang=-Math.PI/2 + i/N*Math.PI*2;
+      sites.push({x:cx+Math.cos(ang)*R, y:cy+Math.sin(ang)*R, ang,
+        e: (Math.sin(i*2.3)*0.5+0.5)});  // site energy 0..1
+    }
+    rc={x:cx,y:cy};
+  }
+  function reset(){ excCenter=0; toRC=0; excVel=0.9; build(); }
+
+  function draw(dt){
+    const w=cv._w,h=cv._h; ctx.clearRect(0,0,w,h);
+    if(!sites.length || Math.abs(sites[0]?.x - w*0.5) > w) build();
+    if(!sites.length) build();
+    // rebuild if canvas resized
+    const cx=w*0.5, cy=h*0.46, R=Math.min(w,h)*0.30;
+    if(Math.abs(sites[0].x-(cx+Math.cos(-Math.PI/2)*R))>2) build();
+
+    // delocalization length grows with J, shrinks with disorder
+    const deloc = 1 + (N-1)*Math.max(0,(J-dis*0.8))*0.7;  // ~sites spanned
+    const sigma = Math.max(0.6, deloc/2.2);
+
+    // ---- coupling network (dipole lines between neighbours) ----
+    for(let i=0;i<N;i++){
+      const a=sites[i], b=sites[(i+1)%N];
+      const str=J*(0.5+0.5*Math.cos((i)*0.7));
+      ctx.strokeStyle=`rgba(55,224,255,${0.05+str*0.22})`;
+      ctx.lineWidth=0.5+str*2;
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    }
+
+    // ---- move exciton centre around ring, biased toward low-energy sites (funnel) ----
+    if(toRC<=0){
+      // funnel bias: drift toward the lowest-energy site
+      let lowI=0,lowE=9; for(let i=0;i<N;i++) if(sites[i].e<lowE){lowE=sites[i].e;lowI=i;}
+      const target=lowI;
+      let diff=((target-excCenter+N)%N); if(diff>N/2) diff-=N;
+      excVel += diff*0.4*dt;
+      excVel *= 0.94;
+      excCenter=(excCenter+excVel*dt*3 + N)%N;
+      // chance to get trapped and hand to RC when near lowest site & coupling decent
+      let d=Math.abs(((excCenter-target+N)%N)); if(d>N/2)d=N-d;
+      if(d<0.6 && J>0.25 && Math.random()<0.9*dt) toRC=0.001;
+    } else {
+      toRC=Math.min(1,toRC+dt*0.8);
+      if(toRC>=1){ // fire again: fresh exciton lands on a random peripheral (high-e) site
+        toRC=0; excCenter=(Math.random()*N); excVel=(Math.random()-0.5)*2;
+      }
+    }
+
+    // ---- draw sites with exciton amplitude glow ----
+    for(let i=0;i<N;i++){
+      const s=sites[i];
+      // gaussian amplitude around excCenter (periodic)
+      let d=Math.abs(i-excCenter); if(d>N/2)d=N-d;
+      let amp=Math.exp(-(d*d)/(2*sigma*sigma));
+      if(toRC>0) amp*=(1-toRC);
+      // base pigment
+      ctx.fillStyle="#141633";
+      ctx.strokeStyle=`rgba(120,140,255,${0.2+s.e*0.2})`;ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(s.x,s.y,7,0,7);ctx.fill();ctx.stroke();
+      // exciton glow
+      if(amp>0.02){
+        ctx.shadowBlur=6+amp*26;ctx.shadowColor="#37e0ff";
+        const g=ctx.createRadialGradient(s.x,s.y,1,s.x,s.y,7+amp*10);
+        g.addColorStop(0,`rgba(190,245,255,${amp})`);
+        g.addColorStop(.5,`rgba(55,224,255,${amp*0.9})`);
+        g.addColorStop(1,`rgba(55,224,255,0)`);
+        ctx.fillStyle=g;ctx.beginPath();ctx.arc(s.x,s.y,7+amp*10,0,7);ctx.fill();
+        ctx.shadowBlur=0;
+      }
+    }
+
+    // ---- funnel gradient hint: connect each site to RC faintly (energy downhill) ----
+    for(let i=0;i<N;i++){
+      const s=sites[i];
+      ctx.strokeStyle=`rgba(155,107,255,${0.03+ (1-s.e)*0.05})`;
+      ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(rc.x,rc.y);ctx.stroke();
+    }
+
+    // ---- transfer streak to RC when trapping ----
+    if(toRC>0){
+      // find current low site
+      let lowI=0,lowE=9; for(let i=0;i<N;i++) if(sites[i].e<lowE){lowE=sites[i].e;lowI=i;}
+      const s=sites[lowI];
+      const px=s.x+(rc.x-s.x)*toRC, py=s.y+(rc.y-s.y)*toRC;
+      ctx.strokeStyle=`rgba(155,107,255,.6)`;ctx.lineWidth=2;ctx.shadowBlur=10;ctx.shadowColor="#9b6bff";
+      ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(px,py);ctx.stroke();ctx.shadowBlur=0;
+      ctx.fillStyle="#fff";ctx.shadowBlur=14;ctx.shadowColor="#9b6bff";
+      ctx.beginPath();ctx.arc(px,py,4,0,7);ctx.fill();ctx.shadowBlur=0;
+    }
+
+    // ---- reaction centre ----
+    const rcPulse=(toRC>0)?(1-Math.abs(0.5-toRC)*2):0.2;
+    ctx.shadowBlur=10+rcPulse*24;ctx.shadowColor="#9b6bff";
+    const rg=ctx.createRadialGradient(rc.x,rc.y,1,rc.x,rc.y,16);
+    rg.addColorStop(0,`rgba(255,255,255,${0.4+rcPulse*0.6})`);
+    rg.addColorStop(.4,`rgba(155,107,255,.9)`);
+    rg.addColorStop(1,"rgba(155,107,255,0)");
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(rc.x,rc.y,16,0,7);ctx.fill();ctx.shadowBlur=0;
+    ctx.fillStyle="#e7ecff";ctx.font="10px var(--mono),monospace";ctx.textAlign="center";
+    ctx.fillText("RC",rc.x,rc.y+3.5);
+    ctx.fillStyle="#8a90b8";ctx.fillText("special pair / trap",rc.x,cy+R+22);
+
+    document.getElementById("delocRd").textContent=deloc.toFixed(1);
+  }
+  return {draw,reset};
+})();
+
+/* ============================================================
+   PANE 4 · CHARGE SEPARATION  (RC cascade + Marcus parabolas)
+   ============================================================ */
+const Charge = (()=>{
+  const {cv,ctx,resize}=setup("cChg");
+  let dG=0.6;                 // -ΔG° eV
+  const lambda=0.8, kT=0.025; // Marcus params
+  // cascade cofactors (narrative order, growing spatial separation)
+  const cofactors=[
+    {name:"P680*", t:"0",     col:"#ffd166"},
+    {name:"Pheo⁻", t:"~3 ps", col:"#ff9d5c"},
+    {name:"Qₐ",    t:"~200 ps",col:"#37e0ff"},
+    {name:"Q_B",   t:"~1 ms", col:"#5dffa0"},
+  ];
+  let e=0;      // electron progress 0..cofactors.length-1
+  let hold=0;
+  function reset(){ e=0; hold=0; }
+
+  document.getElementById("dg").addEventListener("input",ev=>{
+    dG=+ev.target.value; document.getElementById("dgRd").innerHTML=`<b>${dG.toFixed(2)}</b> eV`;
+  });
+
+  function marcusRate(ndG){ // relative (drop prefactors), ndG = -ΔG°
+    const dGo=-ndG;
+    return Math.exp(-Math.pow(dGo+lambda,2)/(4*lambda*kT));
+  }
+
+  function draw(dt){
+    const w=cv._w,h=cv._h; ctx.clearRect(0,0,w,h);
+    const splitX=w*0.46;
+
+    /* ---------- LEFT: RC cascade ---------- */
+    const lx=w*0.12, topY=h*0.14, botY=h*0.86;
+    const n=cofactors.length;
+    const nodes=cofactors.map((c,i)=>({
+      x: lx + i*(splitX-lx-30)/(n-1),
+      y: topY + i*(botY-topY)/(n-1),
+      ...c
+    }));
+    // membrane hint
+    ctx.fillStyle="rgba(155,107,255,.04)";
+    ctx.fillRect(lx-30,topY-20,splitX-lx,botY-topY+40);
+    ctx.fillStyle="#565c86";ctx.font="9px var(--mono),monospace";ctx.textAlign="left";
+    ctx.fillText("stroma ↑",lx-24,topY-8);
+    ctx.fillText("lumen ↓",lx-24,botY+16);
+
+    // cascade arrows
+    for(let i=0;i<n-1;i++){
+      const a=nodes[i],b=nodes[i+1];
+      ctx.strokeStyle="rgba(120,140,255,.25)";ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+      // faint back-recombination (curved, dashed) — the avoided path
+      ctx.strokeStyle="rgba(255,93,122,.16)";ctx.setLineDash([3,5]);ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(b.x,b.y);
+      ctx.quadraticCurveTo((a.x+b.x)/2+22,(a.y+b.y)/2, a.x,a.y);
+      ctx.stroke();ctx.setLineDash([]);
+    }
+
+    // advance electron
+    if(hold>0){ hold-=dt; }
+    else { e+=dt*0.9;
+      if(e>=n-1){ e=0; } }
+    const ei=Math.floor(e), frac=e-ei;
+    const cur=nodes[Math.min(ei,n-1)], nxt=nodes[Math.min(ei+1,n-1)];
+    const ex=cur.x+(nxt.x-cur.x)*frac, ey=cur.y+(nxt.y-cur.y)*frac;
+
+    // nodes
+    for(let i=0;i<n;i++){
+      const nd=nodes[i];
+      const active = i<=e+0.5;
+      ctx.fillStyle="#12132a";
+      ctx.strokeStyle=nd.col;ctx.lineWidth=1.6;ctx.shadowBlur=active?10:0;ctx.shadowColor=nd.col;
+      ctx.beginPath();ctx.arc(nd.x,nd.y,11,0,7);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+      ctx.fillStyle="#e7ecff";ctx.font="10.5px var(--mono),monospace";ctx.textAlign="left";
+      ctx.fillText(nd.name,nd.x+16,nd.y-2);
+      ctx.fillStyle="#8a90b8";ctx.font="9px var(--mono),monospace";
+      ctx.fillText(nd.t,nd.x+16,nd.y+10);
+    }
+    // travelling electron
+    ctx.shadowBlur=16;ctx.shadowColor="#37e0ff";
+    const eg=ctx.createRadialGradient(ex,ey,1,ex,ey,9);
+    eg.addColorStop(0,"#ffffff");eg.addColorStop(.4,"#37e0ff");eg.addColorStop(1,"rgba(55,224,255,0)");
+    ctx.fillStyle=eg;ctx.beginPath();ctx.arc(ex,ey,9,0,7);ctx.fill();ctx.shadowBlur=0;
+    ctx.fillStyle="#fff";ctx.font="8px var(--mono),monospace";ctx.textAlign="center";
+    ctx.fillText("e⁻",ex,ey+3);
+
+    ctx.fillStyle="#8a90b8";ctx.font="10px var(--sans),sans-serif";ctx.textAlign="left";
+    ctx.fillText("ever-larger charge separation → recombination outrun",lx-24,botY+34);
+
+    /* ---------- RIGHT: Marcus parabolas ---------- */
+    const rx0=splitX+30, rx1=w-24, ry0=h-54, ry1=h*0.12;
+    const mid=(rx0+rx1)/2;
+    ctx.strokeStyle="rgba(120,140,255,.12)";ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(rx0,ry0);ctx.lineTo(rx1,ry0);ctx.stroke();      // x axis
+    ctx.beginPath();ctx.moveTo(rx0,ry0);ctx.lineTo(rx0,ry1);ctx.stroke();      // y axis
+    ctx.fillStyle="#8a90b8";ctx.font="9.5px var(--mono),monospace";ctx.textAlign="center";
+    ctx.fillText("reaction coordinate", (rx0+rx1)/2, ry0+18);
+    ctx.save();ctx.translate(rx0-14,(ry0+ry1)/2);ctx.rotate(-Math.PI/2);
+    ctx.fillText("free energy", 0,0);ctx.restore();
+
+    const A=(ry0-ry1);           // vertical scale
+    const span=(rx1-rx0);
+    // reactant parabola centred left, product centred right; product min lowered by dG
+    const kpar=3.0/(span*span)*A*2;
+    const xR=rx0+span*0.32, xP=rx0+span*0.68;
+    const yMinR=ry1+A*0.55;
+    const yMinP=yMinR - (dG/2.4)*A*0.5;    // deeper with larger -ΔG
+    function parab(xc,ymin,col,dash){
+      ctx.strokeStyle=col;ctx.lineWidth=2;if(dash)ctx.setLineDash(dash);else ctx.setLineDash([]);
+      ctx.beginPath();
+      for(let x=rx0;x<=rx1;x+=3){
+        let y=ymin + kpar*Math.pow(x-xc,2);
+        y=Math.max(ry1-4,Math.min(ry0,y));
+        if(x===rx0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+      }
+      ctx.stroke();ctx.setLineDash([]);
+    }
+    parab(xR,yMinR,"rgba(55,224,255,.9)");     // reactant P*
+    parab(xP,yMinP,"rgba(155,107,255,.9)");    // product P+ A-
+
+    // intersection ~ activation barrier
+    // solve kpar(x-xR)^2 + yMinR = kpar(x-xP)^2 + yMinP
+    const xc = ( (xP*xP - xR*xR) + (yMinR - yMinP)/kpar ) / (2*(xP-xR));
+    const yc = yMinR + kpar*Math.pow(xc-xR,2);
+    if(xc>rx0&&xc<rx1){
+      ctx.fillStyle="#ffd166";ctx.shadowBlur=12;ctx.shadowColor="#ffd166";
+      ctx.beginPath();ctx.arc(xc,yc,4,0,7);ctx.fill();ctx.shadowBlur=0;
+      // barrier bracket
+      ctx.strokeStyle="rgba(255,209,102,.4)";ctx.setLineDash([3,3]);ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(xc,yc);ctx.lineTo(xc,yMinR);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle="#ffd166";ctx.font="9px var(--mono),monospace";ctx.textAlign="left";
+      ctx.fillText("ΔG‡",xc+6,(yc+yMinR)/2);
+    }
+    ctx.fillStyle="#37e0ff";ctx.font="9.5px var(--mono),monospace";ctx.textAlign="center";
+    ctx.fillText("P*",xR,yMinR+14);
+    ctx.fillStyle="#9b6bff";ctx.fillText("P⁺A⁻",xP,yMinP-8);
+
+    // rate meter
+    const rate=marcusRate(dG);
+    const peak=marcusRate(lambda); // max at -dG=lambda
+    const rel=rate/peak;
+    const regime = Math.abs(dG-lambda)<0.06 ? "activationless (peak)"
+                 : dG<lambda ? "normal region" : "INVERTED region";
+    document.getElementById("regimeRd").innerHTML =
+      dG>lambda? `<span style="color:#ff5d7a">${regime}</span>`
+      : dG>lambda-0.06 && dG<lambda+0.06 ? `<span style="color:#ffd166">${regime}</span>`
+      : `<span style="color:#5dffa0">${regime}</span>`;
+    document.getElementById("rateRd").textContent = rel<0.001? rel.toExponential(1): rel.toFixed(3);
+
+    // little rate bar
+    const bx=mid-70,by=ry1-2,bw=140;
+    ctx.fillStyle="rgba(120,140,255,.1)";ctx.fillRect(bx,by-6,bw,6);
+    ctx.fillStyle= dG>lambda?"#ff5d7a":"#5dffa0";
+    ctx.fillRect(bx,by-6,bw*Math.max(0.01,rel),6);
+    ctx.fillStyle="#8a90b8";ctx.font="9px var(--mono),monospace";ctx.textAlign="center";
+    ctx.fillText("rate ∝ overlap",mid,by-12);
+  }
+  return {draw,reset};
+})();
+
+/* ============================================================
+   MASTER LOOP
+   ============================================================ */
+const panes=[Flow,Spectrum,Exciton,Charge];
+const _resizers=[];
+["cFlow","cSpec","cExc","cChg"].forEach(id=>{
+  const cv=document.getElementById(id);
+  const ctx=cv.getContext("2d");
+  const r=()=>{ const dpr=Math.min(2,window.devicePixelRatio||1);
+    const b=cv.getBoundingClientRect();
+    cv.width=Math.max(1,b.width*dpr);cv.height=Math.max(1,b.height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);cv._w=b.width;cv._h=b.height; };
+  _resizers.push(r);
+});
+window.addEventListener("resize",()=>_resizers.forEach(r=>r()));
+_resizers.forEach(r=>r());
+
+let last=performance.now();
+function frame(now){
+  let dt=(now-last)/1000; last=now;
+  dt=Math.max(0,Math.min(0.05,dt));
+  if(Clock.running){
+    const sdt=dt*Clock.speed;
+    Clock.t+=sdt;
+    Flow.draw(sdt); Spectrum.draw(sdt); Exciton.draw(sdt); Charge.draw(sdt);
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- controls ---------- */
+document.getElementById("playBtn").addEventListener("click",e=>{
+  Clock.toggle();
+  e.target.textContent=Clock.running? "❚❚ pause":"▶ play";
+  if(Clock.running) last=performance.now();
+});
+document.getElementById("resetBtn").addEventListener("click",()=>Clock.reset());
+document.getElementById("speed").addEventListener("input",e=>{
+  Clock.speed=+e.target.value;
+  document.getElementById("speedRd").textContent=Clock.speed.toFixed(1)+"×";
+});
+
+// reduced motion
+if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+  Clock.speed=0.4; document.getElementById("speed").value=0.4;
+  document.getElementById("speedRd").textContent="0.4×";
+}
+</script>
+</body>
+</html>
