@@ -188,9 +188,16 @@ input[type=range].ph::-moz-range-thumb{background:var(--magenta);box-shadow:0 0 
   #c3dWrap{height:52vw;min-height:300px;flex:0 0 auto}
 }
 </style>
+<style>
+.qvda-home{align-self:center;position:relative;z-index:60;display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-family:ui-monospace,Consolas,"JetBrains Mono",monospace;font-size:12px;font-weight:600;letter-spacing:.5px;color:#22d3ee;background:rgba(34,211,238,.09);border:1px solid rgba(34,211,238,.4);border-radius:8px;padding:7px 11px;transition:background .15s,box-shadow .15s,transform .15s;white-space:nowrap}
+.qvda-home:hover{background:rgba(34,211,238,.18);box-shadow:0 0 16px -2px rgba(34,211,238,.5);transform:translateY(-1px)}
+.qvda-home svg{width:14px;height:14px;flex:0 0 auto}
+@media(max-width:520px){.qvda-home span{display:none}.qvda-home{padding:7px 8px}}
+</style>
 </head>
 <body>
 <header>
+  <a class="qvda-home" href="../index.html" aria-label="Return to QVDA Learning home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h4v-6h6v6h4V10"/></svg><span>Home</span></a>
   <svg id="qvdaLogo" viewBox="0 0 64 64" aria-label="QVDA Technologies logo">
     <g class="ring">
       <circle cx="32" cy="32" r="27" fill="none" stroke="#22d3ee" stroke-width="2.5"
